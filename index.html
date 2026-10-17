@@ -1,0 +1,1150 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b6b5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="器具選定ナビ">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>器具選定ナビ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: 現調シートの順に入力 → 右(スマホでは下)に候補カード。屋外でも読める高コントラスト */
+:root{
+  --bg:#f3f5f4; --panel:#ffffff; --ink:#15211f; --sub:#55635f; --line:#d5dcd9;
+  --accent:#0b6b5c; --accent-ink:#ffffff; --accent-soft:#e2f1ed;
+  --ok:#1f7a3a; --ok-soft:#e3f3e6; --warn:#9a5b00; --warn-soft:#fbefd9; --ng:#b3261e; --ng-soft:#fbe4e2;
+  --code-bg:#eef2f1;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+  --f-code:"JetBrains Mono",ui-monospace,"Consolas",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101615; --panel:#18211f; --ink:#e7eeec; --sub:#9fb0ab; --line:#2c3a37;
+  --accent:#4fc2ab; --accent-ink:#06211c; --accent-soft:#163631;
+  --ok:#6fd08a; --ok-soft:#173222; --warn:#f0b75a; --warn-soft:#3a2c12; --ng:#ff8a80; --ng-soft:#3d1c1a;
+  --code-bg:#22302d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101615; --panel:#18211f; --ink:#e7eeec; --sub:#9fb0ab; --line:#2c3a37;
+  --accent:#4fc2ab; --accent-ink:#06211c; --accent-soft:#163631;
+  --ok:#6fd08a; --ok-soft:#173222; --warn:#f0b75a; --warn-soft:#3a2c12; --ng:#ff8a80; --ng-soft:#3d1c1a;
+  --code-bg:#22302d; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:0 48px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header.top h1{font-size:18px;margin:0;letter-spacing:.02em}
+header.top .scope{font-size:12px;color:var(--sub)}
+header.top nav{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+@media (max-width:520px){header.top nav{margin-left:0;width:100%}}
+.tab{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.wrap{max-width:1180px;margin:16px auto 0;display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.sheet h2{font-size:13px;letter-spacing:.08em;margin:0;padding:8px 14px;background:var(--code-bg);color:var(--sub);border-bottom:1px solid var(--line)}
+.sec{padding:12px 14px;display:grid;gap:10px;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:0}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+label.f{display:grid;gap:4px;font-size:12px;color:var(--sub);min-width:0}
+label.f>span b{color:var(--ink);font-weight:700}
+input[type=text],input[type=number],select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.seg{display:flex;flex-wrap:wrap;gap:6px;position:relative}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:14px;cursor:pointer;background:var(--bg);color:var(--ink)}
+.seg input:checked+label{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:1px}
+.seg input:disabled+label{opacity:.4;cursor:not-allowed}
+.hint{font-size:12px;color:var(--sub);margin:0}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px}
+.chk input{margin-top:4px;width:18px;height:18px;flex:none}
+.btn{font:inherit;border-radius:6px;padding:8px 14px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;font-weight:700}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:5px 10px;font-size:13px}
+.lookup{display:flex;gap:8px}
+.lookup input{flex:1}
+.example{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--warn-soft);color:var(--warn);font-size:13px;padding:8px 14px}
+/* results */
+.results{display:grid;gap:14px;min-width:0}
+.summary{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:6px}
+.summary .k{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--sub)}
+.summary .k b{color:var(--ink)}
+.alert{border-radius:8px;padding:10px 12px;font-size:14px;border:1px solid}
+.alert.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--ink)}
+.alert.ng{background:var(--ng-soft);border-color:var(--ng);color:var(--ink)}
+.alert.info{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.alert strong{display:block;margin-bottom:2px}
+.group h3{font-size:14px;margin:4px 0 8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.group h3 small{font-weight:400;color:var(--sub);font-size:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;min-width:0}
+.card .mk{font-size:12px;color:var(--sub);display:flex;justify-content:space-between;gap:8px}
+.card .code{font-family:var(--f-code);font-weight:700;font-size:16px;background:var(--code-bg);border-radius:6px;padding:6px 8px;overflow-wrap:anywhere}
+.card .parts{font-family:var(--f-code);font-size:12px;color:var(--sub);overflow-wrap:anywhere}
+.card dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font-size:13px}
+.card dt{color:var(--sub)}
+.card dd{margin:0;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;border-radius:999px;padding:2px 9px;border:1px solid}
+.chip.ok{color:var(--ok);background:var(--ok-soft);border-color:var(--ok)}
+.chip.warn{color:var(--warn);background:var(--warn-soft);border-color:var(--warn)}
+.chip.ng{color:var(--ng);background:var(--ng-soft);border-color:var(--ng)}
+.chip.mute{color:var(--sub);border-color:var(--line)}
+.chip.unc{color:var(--ng);background:var(--ng-soft);border-color:var(--ng)}
+.unc,.unc b{color:var(--ng)!important}
+.legend{font-size:13px;color:var(--sub)}.legend .unc{font-weight:700}
+.card ul{margin:0;padding-left:1.1em;font-size:13px;display:grid;gap:3px}
+.card .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:2px}
+.card a{color:var(--accent);font-size:13px}
+.ai{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:8px}
+.ai textarea{font-family:var(--f-body);font-size:13px;min-height:160px}
+.empty{color:var(--sub);font-size:14px;padding:16px;border:1px dashed var(--line);border-radius:10px;text-align:center}
+table.rec{border-collapse:collapse;width:100%;font-size:13px;background:var(--panel)}
+table.rec th,table.rec td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+table.rec th{background:var(--code-bg);color:var(--sub);font-weight:700;white-space:nowrap}
+.scrollx{overflow-x:auto}
+.foot{max-width:1180px;margin:24px auto 0;font-size:12px;color:var(--sub);display:grid;gap:4px}
+.foot a{color:var(--sub)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;z-index:20}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}.card:hover{border-color:var(--accent)}}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <h1>器具選定ナビ</h1>
+  <span class="scope">試作版バージョン2｜パナソニック・東芝・三菱</span>
+  <nav role="tablist">
+    <button class="tab" id="tab-base" role="tab" aria-selected="true">ベースライト</button>
+    <button class="tab" id="tab-emg" role="tab" aria-selected="false">非常灯・誘導灯</button>
+    <button class="tab" id="tab-rec" role="tab" aria-selected="false">記録 <span id="recCount">0</span></button>
+  </nav>
+</header>
+
+<main id="view-sel" class="wrap">
+  <form class="sheet" id="f" autocomplete="off">
+    <div class="example" id="exBar"><span>例の器具が入力されています</span><button type="button" class="btn small ghost" id="clearBtn">クリア</button></div>
+
+    <h2>型番から探す(分かる場合)</h2>
+    <div class="sec">
+      <div class="lookup">
+        <input type="text" id="model" placeholder="例:XLX450DENT LE9 / MY-V450331/N AHTN" aria-label="メーカー・本体型式">
+        <button type="button" class="btn" id="lookBtn">調べる</button>
+      </div>
+      <p class="hint" id="lookMsg">LED器具の旧型番は後継品番に変換します。蛍光灯器具の型番は下の項目から候補を出します。</p>
+    </div>
+
+    <h2>現調シートの項目</h2>
+    <div class="sec">
+      <div class="row">
+        <label class="f"><span>Ｎo.</span><input type="text" id="no"></label>
+        <label class="f"><span>フロア</span><input type="text" id="floor"></label>
+        <label class="f"><span>場所</span><input type="text" id="place"></label>
+        <label class="f"><span>台数</span><input type="number" id="qty" min="1" inputmode="numeric"></label>
+      </div>
+      <div class="f"><span class="hint">器具種別</span>
+        <div class="seg" id="kind">
+          <input type="radio" name="kind" id="kA" value="A"><label for="kA">A 直付ベース</label>
+          <input type="radio" name="kind" id="kB" value="B"><label for="kB">B 埋込ベース</label>
+          <input type="radio" name="kind" id="kD" value="D" disabled><label for="kD">D ダウンライト(準備中)</label>
+          <input type="radio" name="kind" id="kI" value="I"><label for="kI">I 非常灯</label>
+          <input type="radio" name="kind" id="kJ" value="J"><label for="kJ">J 誘導灯</label>
+          <input type="radio" name="kind" id="kK" value="K"><label for="kK">K 階段通路誘導灯</label>
+        </div>
+      </div>
+      <div class="f" id="shapeWrap"><span class="hint">形状</span>
+        <div class="seg" id="shapeA">
+          <input type="radio" name="shape" id="sTrough" value="trough"><label for="sTrough">トラフ(笠なし)</label>
+          <input type="radio" name="shape" id="sFuji" value="fuji"><label for="sFuji">逆富士・富士型</label>
+          <input type="radio" name="shape" id="sKasa" value="kasa"><label for="sKasa">反射笠・笠付</label>
+          <input type="radio" name="shape" id="sKata" value="katahan"><label for="sKata">片反射笠</label>
+        </div>
+        <div class="seg" id="shapeB">
+          <input type="radio" name="shape" id="sOpen" value="open"><label for="sOpen">下面開放</label>
+          <input type="radio" name="shape" id="sLouver" value="louver"><label for="sLouver">ルーバー・カバー付</label>
+          <input type="radio" name="shape" id="sCch" value="cch"><label for="sCch">Cチャンネル回避</label>
+        </div>
+      </div>
+      <div class="row">
+        <label class="f"><span>メーカー(既設)</span><input type="text" id="maker" placeholder="例:東芝"></label>
+        <label class="f"><span>製造年 (ﾊﾞｯﾃﾘ交換)</span><input type="text" id="year" placeholder="例:2008"></label>
+        <label class="f"><span>取付高さ(m)</span><input type="number" id="height" step="0.1" inputmode="decimal"></label>
+      </div>
+    </div>
+
+    <div id="emgSecs" hidden>
+    <h2>非常灯・誘導灯の項目</h2>
+    <div class="sec">
+      <div class="f" id="iMountWrap"><span class="hint">取付</span>
+        <div class="seg">
+          <input type="radio" name="imount" id="imD" value="d"><label for="imD">直付</label>
+          <input type="radio" name="imount" id="imE" value="e"><label for="imE">埋込 φ100</label>
+          <input type="radio" name="imount" id="imE150" value="e150"><label for="imE150">埋込 φ150・その他</label>
+        </div>
+      </div>
+      <div class="f" id="iHeightWrap"><span class="hint">天井高</span>
+        <div class="seg">
+          <input type="radio" name="iheight" id="ihL" value="low"><label for="ihL">低天井 〜3m</label>
+          <input type="radio" name="iheight" id="ihM" value="mid"><label for="ihM">中天井 〜6m</label>
+          <input type="radio" name="iheight" id="ihH" value="high"><label for="ihH">高天井 〜8m</label>
+        </div>
+      </div>
+      <div class="f" id="jClsWrap"><span class="hint">級(表示面の大きさ)</span>
+        <div class="seg">
+          <input type="radio" name="jcls" id="jcC" value="C"><label for="jcC">C級(10形)</label>
+          <input type="radio" name="jcls" id="jcBL" value="BL"><label for="jcBL">B級 BL形(20B)</label>
+          <input type="radio" name="jcls" id="jcBH" value="BH"><label for="jcBH">B級 BH形(20A)</label>
+          <input type="radio" name="jcls" id="jcA" value="A"><label for="jcA">A級</label>
+        </div>
+      </div>
+      <div class="f" id="jFaceWrap"><span class="hint">表示面</span>
+        <div class="seg">
+          <input type="radio" name="jface" id="jf1" value="1"><label for="jf1">片面</label>
+          <input type="radio" name="jface" id="jf2" value="2"><label for="jf2">両面</label>
+        </div>
+      </div>
+      <div class="f" id="jMountWrap"><span class="hint">取付</span>
+        <div class="seg">
+          <input type="radio" name="jmount" id="jmD" value="d"><label for="jmD">天井・壁直付、吊下</label>
+          <input type="radio" name="jmount" id="jmE" value="e"><label for="jmE">天井埋込</label>
+          <input type="radio" name="jmount" id="jmW" value="w"><label for="jmW">壁埋込</label>
+        </div>
+      </div>
+      <div class="f" id="jSignWrap"><span class="hint">表示</span>
+        <div class="seg">
+          <input type="radio" name="jsign" id="jsX" value="exit"><label for="jsX">避難口</label>
+          <input type="radio" name="jsign" id="jsR" value="R"><label for="jsR">通路 右矢印</label>
+          <input type="radio" name="jsign" id="jsL" value="L"><label for="jsL">通路 左矢印</label>
+          <input type="radio" name="jsign" id="jsB" value="B"><label for="jsB">通路 両矢印</label>
+        </div>
+      </div>
+      <div class="f" id="kMountWrap"><span class="hint">取付</span>
+        <div class="seg">
+          <input type="radio" name="kmount" id="kmW" value="wall"><label for="kmW">壁直付</label>
+          <input type="radio" name="kmount" id="kmC" value="ceil"><label for="kmC">天井直付</label>
+        </div>
+      </div>
+      <div class="f"><span class="hint">点灯時間</span>
+        <div class="seg">
+          <input type="radio" name="etime" id="et1" value="std"><label for="et1">一般型(20分・30分)</label>
+          <input type="radio" name="etime" id="et2" value="long"><label for="et2">長時間型(60分)</label>
+        </div>
+      </div>
+      <label class="chk" id="jBlinkWrap"><input type="checkbox" id="jblink"><span>点滅・音声付き</span></label>
+    </div>
+    </div>
+
+    <div id="baseSecs">
+    <h2>ランプ・W・本数／色温度</h2>
+    <div class="sec">
+      <div class="row">
+        <label class="f"><span>ランプ</span>
+          <select id="lamp">
+            <optgroup label="40形">
+            <option value="FLR40">FLR40・FL40(40W)</option>
+            <option value="FHF32R">FHF32 定格出力</option>
+            <option value="FHF32H">FHF32 高出力</option>
+            <option value="FHF32U">FHF32 出力不明</option>
+            <option value="LED">LED(既設)40形</option>
+            </optgroup>
+            <optgroup label="20形">
+            <option value="FL20">FL20・FLR20(20W)</option>
+            <option value="FHF16R">FHF16 定格出力</option>
+            <option value="FHF16H">FHF16 高出力</option>
+            <option value="LED20">LED(既設)20形</option>
+            </optgroup>
+          </select></label>
+        <label class="f"><span>本数</span>
+          <select id="lampN"><option>1</option><option>2</option><option>3</option></select></label>
+      </div>
+      <label class="f" id="ledLmWrap" hidden><span>既設LEDの光束(lm)</span><input type="number" id="ledLm" inputmode="numeric" placeholder="例:5200"></label>
+      <div class="f"><span class="hint">明るさの考え方</span>
+        <div class="seg">
+          <input type="radio" name="bright" id="bSame" value="0"><label for="bSame">同等</label>
+          <input type="radio" name="bright" id="bUp" value="1"><label for="bUp">1段明るく</label>
+          <input type="radio" name="bright" id="bDown" value="-1"><label for="bDown">1段省エネ</label>
+        </div>
+      </div>
+      <div class="f"><span class="hint">色温度</span>
+        <div class="seg">
+          <input type="radio" name="cct" id="cL" value="L"><label for="cL">L 電球色</label>
+          <input type="radio" name="cct" id="cV" value="V"><label for="cV">V 温白色</label>
+          <input type="radio" name="cct" id="cW" value="W"><label for="cW">W 白色</label>
+          <input type="radio" name="cct" id="cN" value="N"><label for="cN">N 昼白色</label>
+          <input type="radio" name="cct" id="cD" value="D"><label for="cD">D 昼光色</label>
+        </div>
+      </div>
+    </div>
+
+    <h2>寸法(mm)</h2>
+    <div class="sec">
+      <div class="row">
+        <label class="f"><span>枠 / 器具幅</span><input type="number" id="wFrame" inputmode="numeric"></label>
+        <label class="f"><span>ベース幅</span><input type="number" id="wBase" inputmode="numeric"></label>
+      </div>
+      <div class="row" id="umeDims">
+        <label class="f"><span>埋込穴 幅</span><input type="number" id="holeW" inputmode="numeric"></label>
+        <label class="f"><span>埋込穴 長さ</span><input type="number" id="holeL" inputmode="numeric"></label>
+        <label class="f"><span>フトコロ</span><input type="number" id="futo" inputmode="numeric"></label>
+      </div>
+      <p class="hint">逆富士は、跡を隠せる幅かどうかをベース幅で判定します。</p>
+    </div>
+
+    <h2>取付方法</h2>
+    <div class="sec">
+      <div class="row">
+        <label class="f" id="boltOutWrap"><span>吊ボルト出代(直付)</span><input type="number" id="boltOut" inputmode="numeric" placeholder="天井面からの長さ"></label>
+        <label class="f" id="boltInWrap"><span>吊ボルト引込(埋込)</span><input type="number" id="boltIn" inputmode="numeric" placeholder="天井面から先端まで"></label>
+        <label class="f"><span>ボルトピッチ</span><input type="number" id="pitch" inputmode="numeric"></label>
+      </div>
+      <div class="row">
+        <label class="f"><span>裏BOX・入線位置</span><input type="text" id="entry" placeholder="例:中央、端から300"></label>
+        <label class="f"><span>ボード厚</span><input type="text" id="board" placeholder="例:9.5+9.5"></label>
+      </div>
+      <label class="chk"><input type="checkbox" id="pipe"><span><b>配管あり</b>(器具に電線管・露出配管が直接つながっている)</span></label>
+      <div class="f"><span class="hint">取付面</span>
+        <div class="seg">
+          <input type="radio" name="face" id="fCeil" value="ceil"><label for="fCeil">天井</label>
+          <input type="radio" name="face" id="fWall" value="wall"><label for="fWall">壁</label>
+          <input type="radio" name="face" id="fSlope" value="slope"><label for="fSlope">傾斜天井</label>
+        </div>
+      </div>
+      <label class="f"><span>既設の銘板にある取付指定</span>
+        <select id="dedic">
+          <option value="">表示なし・不明</option>
+          <option value="ceil">天井直付専用</option>
+          <option value="wall">壁付専用</option>
+          <option value="noslope">傾斜天井不可</option>
+          <option value="other">その他の専用表示</option>
+        </select></label>
+    </div>
+    </div>
+
+    <h2>設置条件</h2>
+    <div class="sec">
+      <label class="f"><span>設置環境</span>
+        <select id="env">
+          <option value="in">屋内一般</option>
+          <option value="damp">防湿(浴室・厨房など)</option>
+          <option value="rain">防雨(軒下・屋外)</option>
+        </select></label>
+      <label class="chk" id="emgWrap"><input type="checkbox" id="emg"><span>非常用照明と併用している</span></label>
+      <label class="chk" id="dimWrap"><input type="checkbox" id="dim"><span>調光・センサーを使っている</span></label>
+      <label class="f"><span>備考</span><textarea id="memo" rows="2"></textarea></label>
+    </div>
+  </form>
+
+  <section class="results" id="results" aria-live="polite"></section>
+</main>
+
+<main id="view-rec" class="wrap" hidden style="grid-template-columns:minmax(0,1fr)">
+  <section class="results">
+    <div class="summary">
+      <b>選定記録</b>
+      <p class="hint">「これに決定」を押した組み合わせが、この端末のブラウザに残ります。CSVをコピーしてExcelに貼り付けられます。記録がたまると、選定ルールの答え合わせに使えます。</p>
+      <div class="acts" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" id="csvBtn" type="button">CSVをコピー</button><button class="btn small ghost" id="recClear" type="button">記録を消す</button></div>
+      <div id="recConfirm" hidden class="alert ng"><strong>記録をすべて消しますか?</strong><div style="display:flex;gap:8px;margin-top:6px"><button class="btn small" id="recClearYes" type="button">消す</button><button class="btn small ghost" id="recClearNo" type="button">やめる</button></div></div>
+    </div>
+    <div class="scrollx" id="recTable"></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>品番は各メーカー公式の商品データベース・カタログで最終確認してください。<span class="unc">赤文字は確実ではない情報</span>(形名の規則から組み立てた品番、未確認の電池・表示板、目安の数値)です。必ずメーカーで確認してください。</span>
+  <span>データ確認日:2026年10月13日。出典:<a href="https://www.tlt.co.jp/tlt/products/facility/facility_led_indoor/led_baselight_tenqoo/led_baselight_tenqoo.htm" target="_blank" rel="noopener">東芝ライテック TENQOO</a>・<a href="https://saturn.tlt.co.jp/pdocs/s/LEKT412203NLS9" target="_blank" rel="noopener">東芝 商品データベース</a>・<a href="https://www2.panasonic.biz/jp/lighting/facilities/baselight/id/general_l.html" target="_blank" rel="noopener">パナソニック iDシリーズ</a>・<a href="https://www2.panasonic.biz/jp/lighting/facilities/baselight/id/renewal.html" target="_blank" rel="noopener">iD リニューアル専用本体</a>・<a href="https://www.mitsubishielectric.co.jp/ldg/ja/lighting/products/fixture/myseries/lineup_01.html" target="_blank" rel="noopener">三菱 Myシリーズ</a>・<a href="https://www.mitsubishielectric.co.jp/ldg/wink/ssl/wink_parts/resource/specSearch/myseries/guide_01/My.html" target="_blank" rel="noopener">三菱 明るさの目安</a>・<a href="https://www.tlt.co.jp/tlt/information/seihin/discontinue/data/c4375_p417.pdf" target="_blank" rel="noopener">東芝 誘導灯 新旧対照表</a>・<a href="https://www2.panasonic.biz/jp/lighting/facilities/emergency-lighting-testing/exit/" target="_blank" rel="noopener">パナソニック 誘導灯の交換時期(日本照明工業会ガイド108)</a></span>
+</footer>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+/* ========== データ ========== */
+// 光束ランク(3社共通の目安。三菱公式「明るさの目安」・パナソニック一般タイプの表)
+const RANKS=[2000,2500,3200,4000,5200,6900];
+const RANK_EQ={2000:"FLR40×1 節電相当",2500:"FHF32×1 定格相当",3200:"FHF32×1 高出力相当",4000:"FLR40×2 節電相当",5200:"FHF32×2 定格相当",6900:"FHF32×2 高出力相当"};
+const RANKS20=[800,1600,3200];
+const RANK_EQ20={800:"FL20×1 相当",1600:"FHF16×1 高出力・FL20×2 相当",3200:"FHF16×2 高出力相当"};
+const is20=l=>/^(FL20|FHF16|LED20)/.test(l);
+let SIZE=40;
+const COLOR={L:"電球色",V:"温白色",W:"白色",N:"昼白色",D:"昼光色"};
+const CCT={L:"3000K",V:"3500K",W:"4000K",N:"5000K",D:"6500K"};
+
+// 確認済み品番(公式DB・メーカーページ・販売店で実在を確認したもの)
+const VERIFIED=new Set([
+ // 東芝(商品データベースで在庫対応品を確認、または販売店で確認)
+ "LEKT412203N-LS9","LEKT407523N-LS9","LEKT415523N-LS9","LEKT423693N-LS9","LEKT423523N-LS9","LEKT423253N-LS9","LEKT423403N-LS9","LEKT423203N-LS9","LEKT423523W-LS9","LEKT423523WW-LS9","LEKT423403W-LS9","LEKT423693W-LS9","LEKT423253D-LS9",
+ "LEKR430523N-LS9","LEKR430403N-LS9","LEKR422523N-LS9","LEKR419523N-LS9","LEKR419403N-LS9",
+ // パナソニック
+ "XFX450DEN LE9","XFX440DEN LE9","XFX460DEN LE9","XFX410DEN LE9","XFX430DEN LE9","XFX420DEN LE9","XFX450DED LE9","XFX460DED LE9","XFX440DED LE9","XFX430DEL LE9","XFX440DEW LE9","XFX450DEV LE9","XFX410DED LE9","XFX430DED LE9","XFX410DEV LE9","XFX450DEL LE9",
+ "XFX449DEN LE9","XFX469DEN LE9","XFX459DEN LE9","XFX429DEN LE9","XFX419DEN LE9","XFX459VEN LE9",
+ "XFX450AEN LE9","XFX450KEN LE9","XFX450NEN LE9","XFX450NEV LE9","XFX450VEN LE9","XFX450UEN LE9","XFX450REN LE9",
+ // 三菱(WIN2Kで確認、2026年6月発売の現行世代)
+ "MY-V450530/N AHTN","MY-V450531/N AHTN","MY-V470531/N AHTN","MY-H450530/N AHTN","MY-L450530S/WW AHTN","MY-L450530S/N AHTN",
+ "MY-B450530/N AHTN","MY-B450532/N AHTN","MY-B450533/N AHTN","MY-B450534/N AHTN","MY-B450535/N AHTN",
+ // 20形(東芝は商品データベース、パナソニック・三菱は販売店で確認)
+ "LEKT212164N-LS9","LEKT212084N-LS9","LEKT212324N-LS9","LEKT207164N-LS9","LEKT223164N-LS9","LEKT215164N-LS9",
+ "XFX200NEN LE9","XFX210AEN LE9","XFX210DEN LE9","XFX230KEN LE9","XFX200REN LE9","XFX230VEN LE9",
+ "MY-V215431/N AHTN","MY-V215430/N AHTN","MY-L215430/N AHTN","MY-B215435/N AHTN","MY-V208430/N AHTN","MY-V208431/N AHTN","MY-V230431/N AHTN"
+]);
+
+const TB={2000:"203",2500:"253",3200:"323",4000:"403",5200:"523",6900:"693"};
+const TC={L:"L",V:"WW",W:"W",N:"N",D:"D"};
+const PD={2000:"1",2500:"2",3200:"3",4000:"4",5200:"5",6900:"6"};
+const MD={2000:"20",2500:"25",3200:"30",4000:"40",5200:"50",6900:"70"};
+const MC={L:"L",V:"WW",W:"W",N:"N",D:"D"};
+
+// 器具本体(形状ごと)
+const BODY={
+ T:{ // 東芝 TENQOO
+  trough:{c:"07",body:"LEET-40701-LS9",name:"TENQOO 直付40形 W70(トラフ)",w:70,type:"A"},
+  fuji120:{c:"12",body:"LEET-41201-LS9",name:"TENQOO 直付40形 W120(逆富士・新設向け)",w:120,type:"A"},
+  fuji230:{c:"23",body:"LEET-42301-LS9",name:"TENQOO 直付40形 W230(逆富士・リニューアル対応)",w:230,type:"A"},
+  kasa:{c:"15",body:"LEET-41501-LS9",name:"TENQOO 直付40形 反射笠 W150",w:150,type:"A"},
+  o190:{c:"19",body:"LEER-41902-LS9",name:"TENQOO 埋込40形 W190 下面開放",hole:190,frame:214,type:"B"},
+  o220:{c:"22",body:"LEER-42202-LS9",name:"TENQOO 埋込40形 W220 下面開放",hole:220,holeL:1235,type:"B"},
+  o300:{c:"30",body:"LEER-43002-LS9",name:"TENQOO 埋込40形 W300 下面開放",hole:300,frame:324,type:"B"}
+ },
+ P:{ // パナソニック iDシリーズ(2025年以降の新モデル XFX)
+  trough:{s:"N",body:"NNLK41509J",name:"iDシリーズ 直付 iスタイル W80(トラフ)",w:80,type:"A"},
+  fuji150:{s:"A",body:"NNLK41515J",name:"iDシリーズ 直付 Dスタイル W150",w:150,type:"A"},
+  fuji230:{s:"D",body:"NNLK42523J",name:"iDシリーズ 直付 Dスタイル W230",w:230,type:"A",renew:true},
+  kasa:{s:"K",body:"NNLK41517J",name:"iDシリーズ 直付 反射笠付",w:null,type:"A"},
+  o190:{s:"R",body:null,name:"iDシリーズ 埋込 下面開放 W190",hole:190,holeL:1257,frame:210,depth:49,type:"B"},
+  o220:{s:"U",body:null,name:"iDシリーズ 埋込 下面開放 W220",hole:220,type:"B"},
+  o300:{s:"V",body:null,name:"iDシリーズ 埋込 下面開放 W300",hole:300,type:"B",renew:true},
+  cch:{s:"T",body:null,name:"iDシリーズ 埋込 Cチャンネル回避 W220",hole:220,type:"B"}
+ },
+ M:{ // 三菱 Myシリーズ(2026年6月発売の現行世代 5xx)
+  trough:{f:"L",b:"0",sfx:"S",body:"EL-LHL40701",name:"Myシリーズ 直付 トラフ W70",w:70,type:"A",note:"形名末尾のSの仕様(プルスイッチの有無)をWIN2Kで確認してください"},
+  fuji150:{f:"V",b:"0",body:"EL-LHV41500",name:"Myシリーズ 直付 逆富士 150幅",w:150,type:"A"},
+  fuji230:{f:"V",b:"1",body:"EL-LHV42300",name:"Myシリーズ 直付 逆富士 230幅",w:230,type:"A"},
+  kasa:{f:"H",b:"0",body:"EL-LHH41500",name:"Myシリーズ 直付 笠付 150幅",w:150,type:"A"},
+  o100:{f:"B",b:"0",body:"EL-LHB41000A",name:"Myシリーズ 埋込 100幅",hole:100,holeL:1235,type:"B"},
+  o190:{f:"B",b:"2",body:"EL-LHB41900",name:"Myシリーズ 埋込 190幅",hole:190,holeL:1257,frame:216,depth:63,type:"B"},
+  o220:{f:"B",b:"3",body:null,name:"Myシリーズ 埋込 220幅",hole:220,type:"B"},
+  o300:{f:"B",b:"5",body:"EL-LHB43000",name:"Myシリーズ 埋込 300幅",hole:300,holeL:1257,frame:330,depth:63,type:"B"},
+  cch:{f:"B",b:"4",body:"EL-LHB42201",name:"Myシリーズ 埋込 220幅 Cチャンネル回避",hole:220,holeL:1235,frame:250,depth:29,type:"B"}
+ }
+};
+
+// 20形の器具本体
+const M20NOTE="40形は2026年6月に新しい世代(形名5xx)に切り替わっています。20形も新しい形名が出ている可能性があるので、WIN2Kで確認してください。";
+const BODY20={
+ T:{
+  trough:{c:"07",body:"LEET-20704-LS9",name:"TENQOO 直付20形 W70(トラフ)",w:70,type:"A"},
+  fuji120:{c:"12",body:"LEET-21204-LS9",name:"TENQOO 直付20形 W120(逆富士)",w:120,type:"A"},
+  fuji230:{c:"23",body:"LEET-22304-LS9",name:"TENQOO 直付20形 W230(逆富士)",w:230,type:"A"},
+  kasa:{c:"15",body:"LEET-21504-LS9",name:"TENQOO 直付20形 反射笠",w:150,type:"A"}
+ },
+ P:{
+  trough:{s:"N",body:null,name:"iDシリーズ 20形 直付 iスタイル(トラフ)",w:null,type:"A"},
+  fuji150:{s:"A",body:null,name:"iDシリーズ 20形 直付 Dスタイル W150",w:150,type:"A"},
+  fuji230:{s:"D",body:null,name:"iDシリーズ 20形 直付 Dスタイル W230",w:230,type:"A"},
+  kasa:{s:"K",body:null,name:"iDシリーズ 20形 直付 反射笠付",w:null,type:"A"},
+  o150:{s:"P",body:null,name:"iDシリーズ 20形 埋込 下面開放 W150",hole:150,type:"B"},
+  o190:{s:"R",body:null,name:"iDシリーズ 20形 埋込 下面開放 W190",hole:190,type:"B"},
+  o220:{s:"U",body:null,name:"iDシリーズ 20形 埋込 下面開放 W220",hole:220,type:"B"},
+  o300:{s:"V",body:null,name:"iDシリーズ 20形 埋込 下面開放 W300",hole:300,type:"B"}
+ },
+ M:{
+  trough:{f:"L",b:"0",body:"EL-LHL20700",name:"Myシリーズ 20形 直付 トラフ",w:null,type:"A",note:M20NOTE},
+  fuji150:{f:"V",b:"0",body:"EL-LHV21500",name:"Myシリーズ 20形 直付 逆富士 150幅",w:150,type:"A",note:M20NOTE},
+  fuji230:{f:"V",b:"1",body:"EL-LHV22300",name:"Myシリーズ 20形 直付 逆富士 230幅",w:230,type:"A",note:M20NOTE},
+  kasa:{f:"H",b:"0",body:"EL-LHH21500",name:"Myシリーズ 20形 直付 笠付",w:null,type:"A",note:M20NOTE},
+  o300:{f:"B",b:"5",body:"EL-LHB23000",name:"Myシリーズ 20形 埋込 300幅",hole:300,type:"B",note:M20NOTE}
+ }
+};
+const TB20={800:"08",1600:"16",3200:"32"},TBAR20={800:"083",1600:"163",3200:"323"},PD20={800:"0",1600:"1",3200:"3"},MD20={800:"08",1600:"15",3200:"30"};
+
+// 直管LED(GX16t-5)器具。配管ありのときに表示
+const STRAIGHT=[
+ // トラフ
+ {mk:"パナソニック",code:"NNF41030J LE9",name:"直管LEDランプベースライト 笠なし型(トラフ)",n:1,w:65,shape:"trough",src:"https://item.rakuten.co.jp/alllight/c/0000007040/"},
+ {mk:"三菱",code:"EL-LKL4901B AHN",name:"Lファインeco 直付形 トラフタイプ(直付・吊下兼用)",n:1,w:69,shape:"trough",hole:"電源穴φ26(仕様図)",src:"https://www.mitsubishielectric.co.jp/ldg/wink/ssl/displayProduct.do?pid=302616&ccd=2040101010"},
+ {mk:"三菱",code:"EL-LKL4902B AHN",name:"Lファインeco 直付形 トラフタイプ(直付・吊下兼用)",n:2,w:null,shape:"trough",src:"https://www.mitsubishielectric.co.jp/ldg/wink/ssl/displayProduct.do?ccd=204010&pid=250316"},
+ // 逆富士
+ {mk:"パナソニック",code:"NNF41038J LE9",name:"直管LEDランプベースライト 富士型",n:1,w:null,shape:"fuji",src:"https://item.rakuten.co.jp/alllight/c/0000007040/"},
+ {mk:"パナソニック",code:"NNF42001J LE9",name:"直管LEDランプベースライト 富士型 W200",n:2,w:200,shape:"fuji",src:"https://www.arch-log.com/products/00/d7689c4d-a83a-4f71-aade-ec7e28317339/"},
+ {mk:"パナソニック",code:"NNF42040J LE9",name:"直管LEDランプベースライト 富士型 W250(リニューアル向け)",n:2,w:250,shape:"fuji",src:"https://item.rakuten.co.jp/alllight/c/0000007040/"},
+ {mk:"三菱",code:"EL-LKV4382C AHN",name:"Lファインeco 直付 逆富士(簡易連結具付)",n:2,w:null,shape:"fuji",src:"https://www.monotaro.com/p/6367/2386/"},
+ // 反射笠
+ {mk:"パナソニック",code:"NNF41230C LE9",name:"直管LEDランプベースライト 反射笠付型",n:1,w:null,shape:"kasa",src:"https://item.rakuten.co.jp/alllight/c/0000007040/"},
+ {mk:"パナソニック",code:"NNF42230 LE9",name:"直管LEDランプベースライト 反射笠付型 W200",n:2,w:200,shape:"kasa",src:"https://item.rakuten.co.jp/alllight/c/0000007040/"},
+ // 片反射笠
+ {mk:"パナソニック",code:"NNF41231C LE9",name:"直管LEDランプベースライト 片反射笠付型",n:1,w:72,shape:"katahan",src:"https://item.rakuten.co.jp/alllight/c/0000007040/"}
+];
+// 直管LEDランプ(GX16t-5)。パナソニックは適合ランプ一覧、三菱はセット構成品で確認したもの
+const PLAMP={std:{D:"LDL40S・D/19/23-K",N:"LDL40S・N/19/25-K",W:"LDL40S・W/19/23-K",V:"LDL40S・WW/19/22-K",L:"LDL40S・L/19/21-K"},
+             hi:{D:"LDL40S・D/29/35-K",N:"LDL40S・N/29/38-K",W:"LDL40S・W/29/37-K",V:"LDL40S・WW/29/35-K",L:"LDL40S・L/29/33-K"}};
+const MLAMP={std:"LDL40S･N/17/25･N5",hi:"LDL40S･N/24/39･N4"};
+function lampFor(mk,hi,col,n){
+ if(mk==="パナソニック")return (hi?PLAMP.hi[col]+"(3800lmタイプ)":PLAMP.std[col]+"(2500lmタイプ)")+" ×"+n;
+ return (hi?MLAMP.hi+"(3900lmクラス)":MLAMP.std+"(2500lmタイプ)")+" ×"+n+(col!=="N"?"  ※昼白色の例。他の色はWIN2Kで確認":"");
+}
+
+/* ========== 便利関数 ========== */
+const $=s=>document.querySelector(s);
+const val=id=>{const e=document.getElementById(id);return e?e.value.trim():"";};
+const num=id=>{const v=parseFloat(val(id));return isNaN(v)?null:v;};
+const radio=n=>{const e=document.querySelector('input[name="'+n+'"]:checked');return e?e.value:"";};
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm=s=>s.toUpperCase().replace(/[\s・]/g,"").replace(/[－―ー]/g,"-");
+const isVerified=c=>VERIFIED.has(c);
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,1800);}
+function searchLink(code,site){return "https://www.google.com/search?q="+encodeURIComponent('"'+code+'"'+(site?" site:"+site:""));}
+
+/* ========== 明るさ ========== */
+function baseLumen(){
+ const lamp=val("lamp"),n=+val("lampN");
+ if(lamp==="LED20"){const lm=num("ledLm");if(!lm)return {lm:null,why:"既設LEDの光束を入力してください"};return {lm:nearest(lm),why:"既設LED "+lm+"lm に近いランク(20形)"};}
+ if(is20(lamp)){
+  const t20={FL20:[800,1600,null],FHF16R:[1600,3200,null],FHF16H:[1600,3200,null]}[lamp];const lm20=t20[n-1];
+  if(!lm20)return {lm:null,why:"20形の3灯は試作版の対象外です"};
+  let w=({FL20:"FL20",FHF16R:"FHF16 定格",FHF16H:"FHF16 高出力"})[lamp]+"×"+n+" 相当";
+  if(lamp==="FHF16R")w+="(定格出力は公式の相当表がないため、高出力と同じランクを目安にしています)";
+  return {lm:lm20,why:w};
+ }
+ if(lamp==="LED"){const lm=num("ledLm");if(!lm)return {lm:null,why:"既設LEDの光束を入力してください"};return {lm:nearest(lm),why:"既設LED "+lm+"lm に近いランク"};}
+ const t={FLR40:[2000,4000,6900],FHF32R:[2500,5200,null],FHF32H:[3200,6900,null],FHF32U:[2500,5200,null]}[lamp];
+ const lm=t[n-1];
+ if(!lm)return {lm:null,why:"FHF32×3灯(10000lmクラス)は試作版の対象外です"};
+ let why=({FLR40:"FLR40",FHF32R:"FHF32 定格",FHF32H:"FHF32 高出力",FHF32U:"FHF32(出力不明→定格として計算)"})[lamp]+"×"+n+" 相当";
+ if(lamp==="FLR40"&&n===3)why+="(3灯は公式の相当表がないため目安)";
+ return {lm,why};
+}
+function nearest(lm){const R=SIZE===20?RANKS20:RANKS;let b=R[0];R.forEach(r=>{if(Math.abs(r-lm)<Math.abs(b-lm))b=r;});return b;}
+function shiftRank(lm,d){const R=SIZE===20?RANKS20:RANKS;const i=R.indexOf(lm)+d;return R[Math.max(0,Math.min(R.length-1,i))];}
+
+/* ========== 候補の組み立て ========== */
+function tosh(key,lm,col){
+ if(SIZE===20){const b=BODY20.T[key];if(!b)return null;const cc=TC[col];const code=(b.type==="A"?"LEKT2":"LEKR2")+b.c+TB20[lm]+"4"+cc+"-LS9";
+  return {mk:"東芝",series:b.name,code,parts:"本体 "+b.body+" + LEDバー LEEM-20"+TBAR20[lm]+cc+"-01",b,link:"https://saturn.tlt.co.jp/pdocs/s/"+code.replace(/-/g,""),linkLabel:"東芝 商品データベース"};}
+ const b=BODY.T[key];if(!b)return null;const cc=TC[col];
+ const code=(b.type==="A"?"LEKT4":"LEKR4")+b.c+TB[lm]+cc+"-LS9";
+ return {mk:"東芝",series:b.name,code,parts:"本体 "+b.body+" + LEDバー LEEM-40"+TB[lm]+cc+"-01",b,
+  link:"https://saturn.tlt.co.jp/pdocs/s/"+code.replace(/-/g,""),linkLabel:"東芝 商品データベース"};
+}
+function pana(key,lm,col,renew){
+ if(SIZE===20){const b=BODY20.P[key];if(!b||renew)return null;const code="XFX2"+PD20[lm]+"0"+b.s+"E"+col+" LE9";
+  return {mk:"パナソニック",series:b.name,code,parts:"ライトバー NEL2"+PD20[lm]+"00E"+col+" LE9",b,link:searchLink(code.replace(" ",""),"panasonic.biz"),linkLabel:"パナソニックで検索"};}
+ const b=BODY.P[key];if(!b)return null;
+ const code="XFX4"+PD[lm]+(renew?"9":"0")+b.s+"E"+col+" LE9";
+ return {mk:"パナソニック",renewBody:!!renew,series:b.name+(renew?"(リニューアル専用本体)":""),code,parts:(b.body&&!renew?"本体 "+b.body+" + ":"")+"ライトバー NEL4"+PD[lm]+"00E"+col+" LE9",b,
+  link:searchLink(code.replace(" ",""),"panasonic.biz"),linkLabel:"パナソニックで検索"};
+}
+function mits(key,lm,col){
+ if(SIZE===20){const b=BODY20.M[key];if(!b)return null;const code="MY-"+b.f+"2"+MD20[lm]+"43"+b.b+"/"+MC[col]+" AHTN";
+  return {mk:"三菱",series:b.name,code,parts:"本体 "+b.body+" + ライトユニット EL-LU2"+MD20[lm]+"43"+MC[col]+" AHTN",b,link:searchLink(code,"mitsubishielectric.co.jp"),linkLabel:"三菱 WIN2Kで検索"};}
+ const b=BODY.M[key];if(!b)return null;
+ const code="MY-"+b.f+"4"+MD[lm]+"53"+b.b+(b.sfx||"")+"/"+MC[col]+" AHTN";
+ return {mk:"三菱",series:b.name,code,parts:(b.body?"本体 "+b.body+" + ":"")+([4000,5200,6900].includes(lm)?"ライトユニット EL-LU4"+MD[lm][0]+"053"+MC[col]+" AHTN":"ライトユニットはWIN2Kで確認"),b,
+  link:searchLink(code,"mitsubishielectric.co.jp"),linkLabel:"三菱 WIN2Kで検索"};
+}
+
+function collect(){
+ const d={kind:radio("kind"),shape:radio("shape"),bright:+(radio("bright")||0),col:radio("cct")||"N",
+  wFrame:num("wFrame"),wBase:num("wBase"),holeW:num("holeW"),holeL:num("holeL"),futo:num("futo"),
+  boltOut:num("boltOut"),boltIn:num("boltIn"),pitch:num("pitch"),entry:val("entry"),board:val("board"),
+  pipe:$("#pipe").checked,face:radio("face")||"ceil",dedic:val("dedic"),env:val("env"),emg:$("#emg").checked,dim:$("#dim").checked,
+  lamp:val("lamp"),lampN:+val("lampN"),maker:val("maker"),model:val("model"),year:val("year"),height:num("height"),qty:num("qty"),
+  no:val("no"),floor:val("floor"),place:val("place"),memo:val("memo"),
+  imount:radio("imount"),iheight:radio("iheight"),jcls:radio("jcls"),jface:radio("jface"),jmount:radio("jmount"),jsign:radio("jsign"),
+  kmount:radio("kmount"),etime:radio("etime")||"std",jblink:$("#jblink").checked};
+ return d;
+}
+const isEmgKind=k=>k==="I"||k==="J"||k==="K";
+
+function evaluate(d){
+ const out={alerts:[],groups:[],lm:null,why:""};
+ if(!d.kind){out.alerts.push(["info","器具種別を選んでください","試作版はA 直付ベース・B 埋込ベースに対応しています。"]);return out;}
+ if(!d.shape){out.alerts.push(["info","形状を選んでください",""]);return out;}
+ if(d.emg)out.alerts.push(["ng","非常用照明との併用器具","非常用は認定品から選ぶ必要があり、試作版の候補には入っていません。各社の非常用(TENQOO非常用・iD非常用・My非常用)から選定してください。"]);
+ if(d.env!=="in")out.alerts.push(["ng",(d.env==="damp"?"防湿":"防雨")+"形が必要です","下の候補は屋内用です。各社の防湿・防雨形シリーズから選んでください(試作版は未収録)。"]);
+ // 取付面・専用表示
+ if(d.face!=="ceil"||d.dedic==="wall"){
+  out.alerts.push(["warn",(d.face==="wall"||d.dedic==="wall")?"壁面に付いている器具です":"傾斜天井に付いている器具です","候補の器具が壁面・傾斜天井に取り付けられるかは、各社の取扱説明書・施工説明書で確認してください。取付できると確認できない器具は提案しないでください。"]);
+ }
+ if(d.dedic==="ceil"&&d.face!=="ceil")out.alerts.push(["ng","銘板は「天井直付専用」ですが、取付面が天井以外になっています","入力を確認してください。"]);
+ if(d.dedic==="noslope"&&d.face==="slope")out.alerts.push(["ng","既設は「傾斜天井不可」の表示があります","既設器具が指定外の取付になっている可能性があります。交換後の器具は取付条件を必ず満たすものにしてください。"]);
+ if(d.dedic==="other")out.alerts.push(["warn","既設に専用の取付指定があります","備考に表示内容を書き、候補器具の取付条件と照合してください。"]);
+
+ SIZE=is20(d.lamp)?20:40;
+ const bl=baseLumen();
+ if(!bl.lm){out.alerts.push(["warn","明るさを決められません",bl.why]);return out;}
+ const lm=shiftRank(bl.lm,d.bright);out.lm=lm;out.why=bl.why;
+ const lmChip=d.bright>0?["ok","1段明るく"]:d.bright<0?["mute","1段省エネ"]:["ok","明るさ同等"];
+
+ let keys=[];
+ if(d.kind==="A"){
+  if(d.shape==="katahan"){out.alerts.push(["warn","片反射笠は試作版で未対応","東芝TENQOOには片反射笠形(W77)があります。品番は商品データベースで確認してください。"]);return out;}
+  if(d.shape==="trough")keys=[["T","trough"],["P","trough"],["M","trough"]];
+  if(d.shape==="kasa")keys=[["T","kasa"],["P","kasa"],["M","kasa"]];
+  if(d.shape==="fuji"){
+   const w=d.wBase||d.wFrame;
+   const wide=!w||w>=170;
+   keys=wide?[["T","fuji230"],["P","fuji230"],["M","fuji230"],["T","fuji120"],["P","fuji150"],["M","fuji150"]]
+            :[["P","fuji150"],["M","fuji150"],["T","fuji120"],["T","fuji230"],["P","fuji230"],["M","fuji230"]];
+  }
+ }else{
+  if(d.shape==="cch"){if(SIZE===20){out.alerts.push(["warn","20形のCチャンネル回避形は試作版で未対応","メーカーで確認してください。"]);return out;}keys=[["P","cch"],["M","cch"]];}
+  else{
+   const hw=d.holeW;
+   if(!hw){out.alerts.push(["info","埋込穴の幅を入力してください","穴の幅から器具幅(100・190・220・300)を選びます。"]);return out;}
+   const std=SIZE===20?[150,190,220,300]:[100,190,220,300];
+   let pick=std.find(s=>Math.abs(s-hw)<=10);
+   if(!pick)pick=std.find(s=>s>hw)||300;
+   const k="o"+pick;
+   keys=[["T",k],["P",k],["M",k]];
+   if(SIZE===20)out.alerts.push(["info","20形の埋込は収録が少なめです","東芝の20形埋込はまだ収録していません。三菱は300幅だけ収録しています。そのほかはメーカーで確認してください。"]);
+   if(d.shape==="louver")out.alerts.push(["info","ルーバー・カバー付からの交換","候補は下面開放形です。まぶしさが気になる場所は、各社のグレア抑制タイプ・カバー付を検討してください。"]);
+  }
+ }
+
+ const cards=[];
+ keys.forEach(([m,k],i)=>{
+  let c=m==="T"?tosh(k,lm,d.col):m==="P"?pana(k,lm,d.col,false):mits(k,lm,d.col);
+  if(!c){if(d.kind==="B"&&m==="T"&&(k==="o100"||k==="cch"))return;return;}
+  c.chips=[lmChip];c.notes=[];c.fitLevel="ok";
+  c.primary=i<3||keys.length<=3;
+  judgeFit(c,d);
+  cards.push(c);
+  // パナソニック リニューアル専用本体
+  if(m==="P"&&c.b.renew){
+   const needRenew=(d.kind==="A"&&d.boltOut!=null&&d.boltOut>=20)||(d.kind==="B"&&d.boltIn!=null&&d.boltIn>=50);
+   if(needRenew){const r=pana(k,lm,d.col,true);r.chips=[lmChip];r.notes=[];r.fitLevel="ok";r.primary=true;judgeFit(r,d);
+    r.notes.unshift("既設の吊りボルトをそのまま使えるように寸法設定された本体です(パナソニック公表)。");cards.push(r);}
+  }
+ });
+ cards.forEach(c=>{
+  c.ver=isVerified(c.code);
+  c.chips.push(c.ver?["ok","品番 確認済"]:["unc","品番 推定(未確認)"]);
+  if(c.b.note)c.notes.push(c.b.note);
+  if(!c.ver)c.notes.push("色・明るさの組み合わせによっては設定がない場合があります。リンク先で実在を確認してください。");
+  if(d.dim)c.notes.push("調光・センサーは別形名です(東芝 -LD9、パナソニック LA9等、三菱 AHZ等)。既設の制御方式と合わせてください。");
+  if(d.pipe&&d.kind==="A"){c.chips.push(["warn","配管は縁切り"]);c.notes.unshift("LEDライトバー器具は電源穴が既設配管と合わないため、配管を器具から切り離して施工します(縁切り)。");if(c.fitLevel==="ok")c.fitLevel="warn";}
+ });
+ out.groups.push({title:"後継・置換え候補(LEDベースライト"+(SIZE===20?" 20形":"")+")",sub:lm+"lm クラス｜"+(SIZE===20?RANK_EQ20[lm]:RANK_EQ[lm]),cards:cards.filter(c=>c.primary)});
+ const sub=cards.filter(c=>!c.primary);
+ if(sub.length)out.groups.push({title:d.shape==="fuji"&&(d.wBase||d.wFrame||999)>=170?"細い器具にする場合":"幅を広くして跡を隠す場合",sub:"見た目と施工条件で選択",cards:sub});
+
+ // 配管あり → 直管LED
+ if(d.pipe&&d.kind==="A"&&SIZE===20){
+  const groups=[];
+  if(d.lampN===1){
+   const c={mk:"パナソニック",series:"直管LEDランプベースライト 20形 笠なし型(トラフ) LDL20×1灯用",code:"NNF21030C LE9",parts:"ランプ:LDL20ランプ(別売)×1 ※品番はメーカーで確認",b:{w:null,type:"A"},
+    link:"https://store.shopping.yahoo.co.jp/msm/nnf21030clt9.html",linkLabel:"掲載ページ(調光型 LT9)",chips:[["ok","配管 直接接続"],["unc","品番 推定(未確認)"]],
+    notes:["調光型の NNF21030C LT9 は販売店で確認できました。非調光の LE9 は推定です。"],fitLevel:"warn",ver:false};
+   judgeFit(c,d);groups.push({title:"直管形トラフ(配管を器具に直接入れる)",sub:"配管ありの第一候補｜20形",cards:[c]});
+  }else out.alerts.push(["warn","20形の直管形2灯用はまだ収録していません","LDL20×2灯用の器具はメーカーで確認してください。三菱の直管形(Lファインeco)20形もWIN2Kで確認してください。"]);
+  out.groups=groups.concat(out.groups);
+  out.alerts.push(["info","配管ありのため、直管形を先に表示しています","新しい器具の電源穴と既設配管の位置・径を照合してください。"]);
+ }
+ if(d.pipe&&d.kind==="A"&&SIZE===40){
+  const n=d.lampN;
+  const hi=d.lamp==="FHF32H"||d.bright>0;
+  const mkCard=s=>{const c={mk:s.mk,series:s.name+" LDL40×"+s.n+"灯用",code:s.code,parts:"ランプ:"+lampFor(s.mk,hi,d.col,s.n),
+    b:{w:s.w,type:"A"},link:s.src,linkLabel:"掲載ページ",chips:[["ok","配管 直接接続"],["ok","品番 確認済"]],notes:[],fitLevel:"ok",ver:true};
+    judgeFit(c,d);
+    if(s.hole)c.notes.push(s.hole+"。既設配管のコネクタが入るか確認してください。");
+    if(s.mk==="三菱")c.notes.push("セット形名はランプ込みで「"+s.code+"(25N5)」のような形になります。WIN2Kで確認してください。");
+    return c;};
+  const trough=STRAIGHT.filter(s=>s.shape==="trough"&&s.n===n).map(mkCard);
+  // 2灯の置換え:パナソニックは直管トラフ1灯用のみ → 1灯用+3800lmランプで明るさを合わせる
+  if(n===2){
+   const s=STRAIGHT.find(x=>x.code==="NNF41030J LE9");const c=mkCard(s);
+   c.parts="ランプ:"+lampFor(s.mk,true,d.col,1);
+   const enough=d.lamp==="FLR40"&&d.bright<=0;
+   c.chips.splice(1,0,enough?["ok","1灯で2灯相当"]:["warn","明るさ不足の可能性"]);
+   c.notes.unshift(enough?"FLR40×2(節電タイプ約4000lm相当)を、1灯用トラフ+3800lmタイプのランプ1本でほぼ同等の明るさにする案です。器具1台・配管直結のまま施工できます。"
+                         :"3800lmタイプのランプ1本では、既設("+$("#lamp").selectedOptions[0].text+"×2)より暗くなる可能性があります。照度が必要な場所では三菱の2灯用を選んでください。");
+   if(!enough&&c.fitLevel==="ok")c.fitLevel="warn";
+   trough.push(c);
+  }
+  const same=d.shape!=="trough"?STRAIGHT.filter(s=>s.shape===d.shape&&s.n===n).map(mkCard):[];
+  const groups=[];
+  if(trough.length)groups.push({title:"直管形トラフ(配管を器具に直接入れる)",sub:"配管ありの第一候補｜ランプ "+(hi?"高出力":"定格")+"相当",cards:trough});
+  else if(d.shape==="trough"||!same.length)out.alerts.push(["warn","LDL40×"+n+"灯用の直管形トラフが見つかりません","3灯用は試作版のデータにありません。"]);
+  if(same.length)groups.push({title:"直管形("+({fuji:"逆富士",kasa:"反射笠",katahan:"片反射笠"})[d.shape]+")",sub:"既設と同じ形にする場合",cards:same});
+  out.groups=groups.concat(out.groups);
+  out.alerts.push(["info","配管ありのため、直管形を先に表示しています","新しい器具の電源穴と既設配管の位置・径を照合してください。東芝の直管ランプシステム器具(トラフ1灯 LET-41007-LS9など)は生産完了で、東芝はTENQOO W70を相当品としているため、直管形はパナソニック・三菱から選んでいます。"]);
+ }
+ return out;
+}
+
+function judgeFit(c,d){
+ const b=c.b;
+ if(d.kind==="A"){
+  const w=d.wBase||d.wFrame;
+  if(w&&b.w){
+   if(b.w+5<w){c.chips.push(["warn","既設より細い"]);c.notes.push("器具幅 "+b.w+"mm は既設("+w+"mm)より細く、取付跡や日焼け跡が見える場合があります。");if(c.fitLevel==="ok")c.fitLevel="warn";}
+   else c.chips.push(["ok","跡を隠せる幅"]);
+  }
+  if(d.boltOut!=null&&d.boltOut>=20&&!c.renewBody){
+   c.chips.push(["warn","ボルト要確認"]);
+   const m={東芝:"東芝は別売の台座アダプターで吊ボルト長さ・電源穴位置に対応できます(品番はカタログで確認)。",パナソニック:"パナソニックはW230・W300にリニューアル専用本体があります。",三菱:"三菱は「なっとくリニューアル」タイプが既設吊ボルト出代47mmまで対応(形名はWIN2Kで確認)。"}[c.mk]||"";
+   c.notes.push("吊ボルト出代 "+d.boltOut+"mm。薄型の標準本体はボルトカットが必要になる場合があります(目安20mm以上)。");if(m)c.notes.push(m);
+   if(c.fitLevel==="ok")c.fitLevel="warn";
+  }
+ }else{
+  if(d.holeW&&b.hole){
+   if(d.holeW<b.hole-10){c.chips.push(["warn","開口拡大"]);c.notes.push("器具の埋込穴 "+b.hole+"mm に対し既設 "+d.holeW+"mm。天井の開口を広げる加工が必要です。");c.fitLevel="warn";}
+   else if(b.frame&&d.holeW>b.frame-10){c.chips.push(["ng","枠が足りない"]);c.notes.push("既設の穴 "+d.holeW+"mm が器具の枠幅 "+b.frame+"mm で隠れません。リニューアルプレートや化粧枠が必要です。");c.fitLevel="ng";}
+   else if(Math.abs(d.holeW-b.hole)<=10){c.chips.push(["ok","穴そのまま"]);}
+   else{c.chips.push(["warn","穴が大きい"]);c.notes.push("既設の穴が器具の埋込寸法より "+(d.holeW-b.hole)+"mm 大きいです。枠でふさがるか取付図で確認してください。");if(c.fitLevel==="ok")c.fitLevel="warn";}
+   if(c.mk==="パナソニック"&&Math.abs(d.holeW-b.hole)>10)c.notes.push("パナソニックは穴との差が縦横70mmまでなら本体枠を伸ばす加工品、70mm以上は特注のリニューアルプレートで対応しています。");
+  }
+  if(d.holeL&&b.holeL&&Math.abs(d.holeL-b.holeL)>15){c.chips.push(["warn","長さ要確認"]);c.notes.push("埋込穴の長さ:器具 "+b.holeL+"mm、既設 "+d.holeL+"mm。");if(c.fitLevel==="ok")c.fitLevel="warn";}
+  if(d.futo!=null&&b.depth){if(d.futo<b.depth+10){c.chips.push(["ng","フトコロ不足"]);c.notes.push("器具の埋込高 "+b.depth+"mm に対しフトコロ "+d.futo+"mm。");c.fitLevel="ng";}else c.chips.push(["ok","フトコロOK"]);}
+  if(d.boltIn!=null&&d.boltIn>=50&&!c.renewBody){c.chips.push(["warn","ボルト延長"]);c.notes.push("吊ボルト引込 "+d.boltIn+"mm。標準本体はボルトの継ぎ足しが必要になる場合があります(目安50mm以上)。");if(c.fitLevel==="ok")c.fitLevel="warn";}
+ }
+ if(d.pitch)c.notes.push("既設ボルトピッチ "+d.pitch+"mm。新器具の取付図の取付穴位置と照合してください。");
+ if(d.face!=="ceil"||d.dedic==="wall"){c.chips.push(["warn","取付面 要確認"]);if(c.fitLevel==="ok")c.fitLevel="warn";}
+ if(d.env!=="in"||d.emg){c.chips.push(["ng","条件外"]);c.fitLevel="ng";}
+}
+
+/* ========== 非常灯・誘導灯(I・J・K) ========== */
+// 誘導灯本体 key=級|面(1片面/2両面)|取付(d直付/e天井埋込)
+const EXIT={
+ T:{"C|1|d":"FBK-10701-LS17","C|2|d":"FBK-10702-LS17","C|1|e":"FBK-10721-LS17","C|2|e":"FBK-10722-LS17",
+    "BL|1|d":"FBK-20701-LS17","BL|2|d":"FBK-20702-LS17","BL|1|e":"FBK-20721-LS17","BL|2|e":"FBK-20722-LS17",
+    "BH|1|d":"FBK-42701-LS17","BH|2|d":"FBK-42702-LS17","BH|1|e":"FBK-42721-LS17","BH|2|e":"FBK-42722-LS17"},
+ P:{"C|1|d":["NNFA10312 LE1","FA10312C LE1"],"C|2|d":["NNFA10322 LE1","FA10322C LE1"],"BL|1|d":["NNFA20312 LE1","FA20312C LE1"],"BL|2|d":["NNFA20322 LE1"],"C|1|e":["FA10352C LE1"]},
+ M:{"C|1|d":["KSH10151C 1EN"],"BL|1|d":["KSH20151C 1EN"],"C|2|d":["KSH10162C 1EN"]}
+};
+const EXIT_LONG={P:{"C|1|d":["NNFA10316 LE1"],"C|2|d":["FA10326C LE1"],"BL|1|d":["FA20316C LE1"]},M:{"C|2|d":["KSH10162HC 1EN"]},T:{}};
+const EMG_VER=new Set(["FBK-10701-LS17","FBK-10702-LS17","FBK-10721-LS17","FBK-10722-LS17","FBK-20701-LS17","FBK-20702-LS17","FBK-20721-LS17","FBK-20722-LS17","FBK-42701-LS17","FBK-42702-LS17","FBK-42721-LS17","FBK-42722-LS17",
+ "NNFA10312 LE1","FA10312C LE1","NNFA10322 LE1","FA10322C LE1","NNFA20312 LE1","FA20312C LE1","NNFA20322 LE1","FA10352C LE1","NNFA10316 LE1","FA10326C LE1","FA20316C LE1",
+ "KSH10151C 1EN","KSH20151C 1EN","KSH10162HC 1EN",
+ "LEDEM09821M","LEDEM09221M","LEDEM13221M","LEDEM30221M","LEDEM30223M","NNFB91005C","NNFB91605C","NNFB93605C","EL-DB11111B","EL-DB31111B","NWCF17101 LE1","NWCF59511 LE1"]);
+// 交換電池(東芝:商品データベース、パナソニック・三菱:メーカーページ・販売店の仕様欄で確認)
+const BATT={
+ "FBK-10701-LS17":"E01(2.4V 700mAh)","FBK-10702-LS17":"E01(2.4V 700mAh)","FBK-10721-LS17":"E01(2.4V 700mAh)","FBK-10722-LS17":"E01(2.4V 700mAh)",
+ "FBK-20701-LS17":"E01(2.4V 700mAh)","FBK-20702-LS17":"E01(2.4V 700mAh)","FBK-20721-LS17":"E01(2.4V 700mAh)","FBK-20722-LS17":"E01(2.4V 700mAh)",
+ "FBK-42701-LS17":"E01(2.4V 700mAh)","FBK-42702-LS17":"E01(2.4V 700mAh)","FBK-42721-LS17":"E01(2.4V 700mAh)","FBK-42722-LS17":"E01(2.4V 700mAh)",
+ "LEDEM09821M":"3HR-AH-SLN","LEDEM09221M":"3HR-AH-BE","LEDEM13221M":"3HR-AH-BE","LEDEM30221M":"7HR-AH-BE","LEDEM30223M":"7HR-AH-BE",
+ "NNFA10312 LE1":"FK722(1.2V 700mAh)","FA10312C LE1":"FK722(1.2V 700mAh)","FA10352C LE1":"FK722(1.2V 700mAh)",
+ "NNFA10322 LE1":"FK723(2.4V 700mAh)","NNFA20312 LE1":"FK723(2.4V 700mAh)","FA20312C LE1":"FK723(2.4V 700mAh)","NNFA20322 LE1":"FK723(2.4V 700mAh)",
+ "NNFA10316 LE1":"FK723(2.4V 700mAh)","FA10326C LE1":"FK723(2.4V 700mAh)",
+ "NNFB91005C":"FK706","NNFB91605C":"FK706","NNFB93605C":"FK709","NWCF59511 LE1":"FK762",
+ "EL-DB11111B":"2H15DD","EL-DB31111B":"6H15DD"
+};
+function battText(mk,code){
+ if(BATT[code])return BATT[code];
+ if(mk==="M"&&/^KSH10151/.test(code))return "WIN2Kで確認(旧世代 KSH10151 1EL は 2H07DA 2.4V 700mAh)";
+ return "メーカーで確認";
+}
+// 表示板(パネル)
+const PANEL={
+ T:{C:{exit:"ET-10701 または ET-10702(避難口。図柄違い)",R:"ET-10713",L:"ET-10714",B:"ET-10715"},
+    BL:{exit:"ET-20701〜ET-20705(避難口。図柄違い)",R:"ET-20713",L:"ET-20714",B:"ET-20715"},
+    BH:{exit:"ET-20701〜ET-20705(避難口。図柄違い)",R:"ET-20713",L:"ET-20714",B:"ET-20715"}},
+ P:{C:{exit:"FK10300・FK10305(避難口。図柄違い)",R:"FK10317",L:"FK10316・FK10318から図で確認",B:"FK10316・FK10318から図で確認"},
+    BL:{exit:"FK20300(片面用)",R:"FK20305〜FK20318から図で確認",L:"FK20305〜FK20318から図で確認",B:"FK20305〜FK20318から図で確認"}},
+ M:{C:{exit:"S1-1091S・S1-1091SR(避難口。図柄違い)",R:"S2-1091AR・S2-1091L・S2-1091Wから向きを図で確認",L:"S2-1091AR・S2-1091L・S2-1091Wから向きを図で確認",B:"S2-1091AR・S2-1091L・S2-1091Wから向きを図で確認"}}
+};
+// 非常灯(専用形) key=取付|天井高
+const EMGL={
+ T:{"d|low":["LEDEM09821M"],"e|low":["LEDEM09221M","LEDEM13221M"],"e|mid":["LEDEM30221M"],"e|high":["LEDEM30223M"]},
+ P:{"d|low":["NNFB91005C"],"e|low":["NNFB91605C"],"e|mid":["NNFB93605C"]},
+ M:{"e|low":["EL-DB11111B"],"e|mid":["EL-DB31111B"]}
+};
+const EMGL_NOTE={"LEDEM09221M":"9形","LEDEM13221M":"13形(9形より明るい)","LEDEM30223M":"30形 〜8m","NNFB91605C":"ハロゲン13形相当","NNFB91005C":"ハロゲン13形相当","NNFB93605C":"ハロゲン30形相当","EL-DB11111B":"ミニハロゲン9形相当"};
+const STAIR=[
+ {mk:"パナソニック",code:"NWCF17101 LE1",name:"シーリング階段灯(ブラケット兼用)・階段通路誘導灯 防雨型 電球色 30分間",mount:["ceil","wall"]},
+ {mk:"パナソニック",code:"NWCF59511 LE1",name:"ブラケット 階段通路誘導灯 防雨型 電球色 30分間",mount:["wall"]}
+];
+const MKN={T:"東芝",P:"パナソニック",M:"三菱"};
+function emgLink(mk,code){return mk==="T"?"https://saturn.tlt.co.jp/pdocs/s/"+code.replace(/[-\s]/g,""):searchLink(code,mk==="P"?"panasonic.biz":"mitsubishielectric.co.jp");}
+function emgCard(mk,code,series,parts,notes){
+ const ver=EMG_VER.has(code);
+ parts=(parts?parts+" ｜ ":"")+"交換電池:"+battText(mk,code);
+ return {mk:MKN[mk],code,series,parts:parts||"",b:{},link:emgLink(mk,code),linkLabel:mk==="T"?"東芝 商品データベース":MKN[mk]+"で検索",
+  chips:[ver?["ok","品番 確認済"]:["unc","品番 推定(未確認)"]],notes:notes||[],fitLevel:ver?"ok":"warn",ver,
+  emgLabel:ver?'<span class="chip ok">現行品</span>':'<span class="chip unc">要確認</span>'};
+}
+function parseYear(s){
+ if(!s)return null;s=String(s).trim().toUpperCase();let m;
+ if((m=s.match(/^(H|平成)\s*(\d{1,2})/)))return 1988+ +m[2];
+ if((m=s.match(/^(R|令和)\s*(\d{1,2})/)))return 2018+ +m[2];
+ if((m=s.match(/(19|20)\d{2}/)))return +m[0];
+ if((m=s.match(/^(\d{2})$/)))return 2000+ +m[1];
+ return null;
+}
+function ageAlert(d,out){
+ const y=parseYear(d.year);if(!y)return;
+ const age=new Date().getFullYear()-y;const limit=d.kind==="J"?12:15;
+ if(age>=limit)out.alerts.push(["ng","製造から約"+age+"年。器具交換を提案してください","耐用の限度("+(d.kind==="J"?"電池内蔵形誘導灯 12年":"専用形非常灯 15年")+")を超えています。電池交換だけでは対応しないでください。"]);
+ else if(age>=8)out.alerts.push(["warn","製造から約"+age+"年。器具交換の時期です","適正交換時期は8〜10年です。電池交換で済ませる場合も、2回目の電池交換なら器具交換をあわせて検討してください。"]);
+ else out.alerts.push(["info","製造から約"+age+"年","器具はまだ使える年数です。点検で充電モニタが消えている場合は、電池交換で対応できる可能性があります。交換電池の品番は既設器具の型番でメーカーのページを確認してください。"]);
+}
+function evaluateEmg(d){
+ const out={alerts:[],groups:[],lm:null,why:""};
+ ageAlert(d,out);
+ if(d.env!=="in")out.alerts.push(["warn","防湿・防雨形が必要です","防湿・防雨形は別品番です。試作版の候補は屋内用なので、メーカーで防湿・防雨形を確認してください。"]);
+ if(d.kind==="I"){
+  let h=d.iheight;if(!h&&d.height)h=d.height<=3?"low":d.height<=6?"mid":"high";
+  if(!d.imount||!h){out.alerts.push(["info","取付と天井高を選んでください","直付か埋込か、天井の高さ(〜3m/〜6m/〜8m)で器具の大きさが決まります。"]);return out;}
+  if(d.imount==="e150"){out.alerts.push(["warn","埋込φ150・その他は試作版で未対応","φ100の器具にする場合は、既設の穴をふさぐプレートが必要か、メーカーのリニューアル部材を確認してください。"]);return out;}
+  if(d.etime==="long")out.alerts.push(["warn","長時間型(60分)は別品番です","下の候補は一般型(30分)です。長時間型が必要な建物か確認し、メーカーで長時間型の品番を確認してください。"]);
+  const key=d.imount+"|"+h;const cards=[];const miss=[];
+  ["T","P","M"].forEach(mk=>{const a=EMGL[mk][key];if(!a){miss.push(MKN[mk]);return;}
+   a.forEach(c=>cards.push(emgCard(mk,c,"LED非常用照明器具 専用形 "+(d.imount==="d"?"直付":"埋込φ100")+" "+({low:"低天井 〜3m",mid:"中天井 〜6m",high:"高天井 〜8m"})[h],EMGL_NOTE[c]||"",["非常時の照度は器具ごとの配置表で確認してください。既設と同じ間隔で足りるか、メーカーの配置表で確認します。"])));});
+  if(miss.length)out.alerts.push(["info",miss.join("・")+"はこの条件の品番を確認できていません","メーカーのページで同じ条件の器具を確認してください。"]);
+  out.groups.push({title:"非常灯の交換候補",sub:"電池内蔵形・専用形",cards});
+  return out;
+ }
+ if(d.kind==="J"){
+  if(!d.jcls||!d.jface||!d.jmount){out.alerts.push(["info","級・表示面・取付を選んでください","表示面の大きさ(級)、片面か両面か、取付方法で本体が決まります。"]);return out;}
+  if(d.jcls==="A"){out.alerts.push(["warn","A級は試作版で未対応","A級は設置条件の確認が必要なため、メーカーで個別に選定してください。"]);return out;}
+  if(d.jmount==="w"){out.alerts.push(["warn","壁埋込は試作版で未対応","壁埋込形はメーカーで個別に選定してください。"]);return out;}
+  if(d.jblink)out.alerts.push(["warn","点滅・音声付きは別品番です","下の候補は一般形です。点滅形・音声点滅形はメーカーで品番を確認してください。"]);
+  const key=d.jcls+"|"+d.jface+"|"+d.jmount;const src=d.etime==="long"?EXIT_LONG:EXIT;
+  if(d.etime==="long")out.alerts.push(["info","長時間型(60分)","長時間型の品番は確認できたものだけ表示しています。東芝の長時間形はメーカーで確認してください。"]);
+  const cards=[];const miss=[];
+  ["T","P","M"].forEach(mk=>{let a=src[mk][key];if(!a){miss.push(MKN[mk]);return;}if(!Array.isArray(a))a=[a];
+   const pn=PANEL[mk][d.jcls];const sign=d.jsign;
+   let parts="表示板:"+(pn&&sign?pn[sign]:sign?"メーカーで確認":"表示(避難口・通路)を選ぶと出ます");
+   if(d.jface==="2"&&sign)parts+=" ×2枚(両面)";
+   a.forEach((c,i)=>{const notes=[];
+    if(mk==="P"&&d.jface==="2")notes.push("両面型の表示板は、左向用・右向用をセットで手配します(パナソニックの注意書き)。");
+    if(d.jmount==="e")notes.push("埋込形は直付用と表示板が違う場合があります。埋込穴の寸法も既設と照合してください。");
+    if(mk==="P"&&i===0&&a.length>1)notes.push("2025年12月発売の新しい品番です(みるだけバッテリーチェック機能付)。従来品 "+a[1]+" も販売中です。");
+    if(mk==="P"&&i===1)notes.push("従来品。新品番 "+a[0]+" と同じ寸法・同じ級です。");
+    if(mk==="M")notes.push("2026年6月発売の現行世代です。");
+    cards.push(emgCard(mk,c,"LED誘導灯 "+({C:"C級(10形)",BL:"B級 BL形(20B形)",BH:"B級 BH形(20A形)"})[d.jcls]+" "+(d.jface==="1"?"片面":"両面")+" "+(d.jmount==="d"?"天井・壁直付":"天井埋込"),parts,notes));});
+  });
+  if(miss.length)out.alerts.push(["info",miss.join("・")+"はこの条件の品番を確認できていません","メーカーのページで同じ条件の器具を確認してください。"]);
+  out.groups.push({title:"誘導灯の交換候補",sub:"本体と表示板は別手配",cards});
+  return out;
+ }
+ if(d.kind==="K"){
+  if(!d.kmount){out.alerts.push(["info","取付を選んでください","壁直付か天井直付かを選んでください。"]);return out;}
+  const cards=STAIR.filter(s=>s.mount.includes(d.kmount)).map(s=>emgCard("P",s.code,s.name,"",["階段の幅・段数で必要な台数が変わります。既設と同じ配置で照度が足りるかメーカーで確認してください。"]));
+  out.alerts.push(["info","東芝・三菱の階段通路誘導灯はまだ収録していません","器具の形(シーリング・ブラケット・ベースライト併用)が多いため、試作版ではパナソニックの例だけ表示しています。"]);
+  out.groups.push({title:"階段通路誘導灯の交換候補(例)",sub:"非常用照明器具・階段通路誘導灯の兼用形",cards});
+  return out;
+ }
+ return out;
+}
+// 型番から:非常灯・誘導灯
+const T_EXIT_OLD={"10601":"10701","10602":"10702","10621":"10721","10622":"10722","20601":"20701","20602":"20702","20621":"20721","20622":"20722","42601":"42701","42602":"42702","42621":"42721","42622":"42722"};
+const T_ET_OLD={"10613":"ET-10713","10633":"ET-10713","10614":"ET-10714","10634":"ET-10714","10615":"ET-10715","10635":"ET-10715","10601":"ET-10701","10602":"ET-10702","10626":"ET-10701","10622":"ET-10702",
+ "20613":"ET-20713","42613":"ET-20713","20633":"ET-20713","42633":"ET-20713","20614":"ET-20714","42614":"ET-20714","20634":"ET-20714","42634":"ET-20714","20615":"ET-20715","42615":"ET-20715","20635":"ET-20715","42635":"ET-20715",
+ "20601":"ET-20701","20602":"ET-20702","20603":"ET-20703","20604":"ET-20704","20605":"ET-20705","42601":"ET-20701","42602":"ET-20702","42603":"ET-20703","42604":"ET-20704","42605":"ET-20705"};
+function lookupEmg(s,raw,msg){
+ let m;const k=v=>{document.getElementById("k"+v).checked=true;};
+ const set=(n,v)=>{const e=document.querySelector('input[name="'+n+'"][value="'+v+'"]');if(e)e.checked=true;};
+ const tReplace=c=>'<a href="https://saturn.tlt.co.jp/pdocs/replace.html?katamei='+esc(c.replace(/[-\s]/g,""))+'" target="_blank" rel="noopener">東芝の代替商品検索</a>';
+ const mkr=v=>{$("#maker").value=v;};
+ if((m=s.match(/^FBK-?(\d{5})N?-?LS17/))){
+  const n=m[1];const nw=T_EXIT_OLD[n]?"FBK-"+T_EXIT_OLD[n]+"-LS17":null;const base=nw?T_EXIT_OLD[n]:n;
+  k("J");set("jcls",{"10":"C","20":"BL","42":"BH"}[base.slice(0,2)]);set("jface",base.slice(-1));set("jmount",base[3]==="2"?"e":"d");mkr("東芝");
+  msg.innerHTML=(nw?"東芝の旧形名です。現行品は <b>"+nw+"</b>(東芝の新旧対照表)。":"東芝の誘導灯です。")+"表示板の向きを選ぶと候補が出ます。"+tReplace(s);return true;}
+ if((m=s.match(/^ET-?(\d{5})/))){
+  const nw=T_ET_OLD[m[1]];mkr("東芝");
+  msg.innerHTML=nw?"東芝の表示板です。現行品は <b>"+nw+"</b>(東芝の新旧対照表)。"+tReplace(s):"東芝の表示板です。"+tReplace(s);return true;}
+ if((m=s.match(/^LEDEM(\d{5})([NM])(K?)/))){
+  const n=m[1];k("I");set("imount",n[2]==="8"?"d":"e");set("iheight",n==="30223"?"high":n.startsWith("30")?"mid":"low");mkr("東芝");
+  msg.innerHTML=(m[2]==="N"?"東芝の旧形名です。現行品は "+uncB("LEDEM"+n+"M"+m[3],EMG_VER.has("LEDEM"+n+"M"+m[3]))+"(末尾N→M)。":"東芝の非常灯です。")+tReplace(s);return true;}
+ if((m=s.match(/^(NN)?FA([124])(\d)(\d)(\d)(\d)([A-Z]?)(LE1)?/))){
+  const num=m[2]+m[3]+m[4]+m[5]+m[6];k("J");set("jcls",{1:"C",2:"BL",4:"BH"}[m[2]]);
+  const f=m[5];set("jface",(f==="2"||f==="6")?"2":"1");set("jmount",(f==="5"||f==="6")?"e":"d");set("etime",m[6]==="6"?"long":"std");mkr("パナソニック");
+  const known={"10312":1,"10322":1,"20312":1,"20322":1}[num];
+  msg.innerHTML="パナソニックの誘導灯です。"+(known?"現行品は "+uncB("NNFA"+num+" LE1",EMG_VER.has("NNFA"+num+" LE1"))+"(2025年12月発売)と "+uncB("FA"+num+"C LE1",EMG_VER.has("FA"+num+"C LE1"))+"。":"現行品はパナソニックの商品ページの「代替品」で確認してください。")+' <a href="'+searchLink("FA"+num+" 代替品","panasonic.biz")+'" target="_blank" rel="noopener">パナソニックで検索</a>';return true;}
+ if((m=s.match(/^NNFB(\d{5})([JC])/))){
+  const n=m[1];k("I");set("imount",n[2]==="6"?"e":"d");set("iheight",n[1]==="3"?"mid":"low");mkr("パナソニック");
+  msg.innerHTML=(m[2]==="J"?"パナソニックの旧品番です。現行品は "+uncB("NNFB"+n+"C",EMG_VER.has("NNFB"+n+"C"))+"(末尾J→C)。":"パナソニックの非常灯です。")+"他社の同等品を候補に表示しました。";return true;}
+ if((m=s.match(/^KSH(1951B|10151|20151)(C?)/))){
+  const cls=m[1]==="20151"?"BL":"C";k("J");set("jcls",cls);set("jface","1");set("jmount","d");mkr("三菱");
+  const nw=(cls==="BL"?"KSH20151C":"KSH10151C")+" 1EN";
+  msg.innerHTML=m[2]?"三菱の現行世代です。他社の同等品を候補に表示しました。":"三菱の旧形名です。現行品は <b>"+nw+"</b>(WIN2Kの現行品表示)。";return true;}
+ if((m=s.match(/^EL-?DB(\d{5})([AB]?)/))){
+  const n=m[1];k("I");set("imount","e");set("iheight",n[0]==="3"?"mid":"low");mkr("三菱");
+  msg.innerHTML=m[2]==="A"?"三菱の旧形名です。現行品は "+uncB("EL-DB"+n+"B",EMG_VER.has("EL-DB"+n+"B"))+"(末尾A→B)。":"三菱の非常灯です。他社の同等品を候補に表示しました。";return true;}
+ if(/^(KSH|FBK|FBL|LEDEM|NNFB|NNFA|FA\d|EL-?D|EL-?W|NWCF|LEKTJ|XDL)/.test(s)){
+  msg.innerHTML="非常灯・誘導灯の型番のようですが、自動判定できませんでした。"+(/^(FBK|FBL|LEDEM|LEKTJ)/.test(s)?tReplace(s):'<a href="'+searchLink(raw+" 後継")+'" target="_blank" rel="noopener">後継品を検索 ↗</a>');return true;}
+ return false;
+}
+
+/* ========== 描画 ========== */
+let LAST=null;
+function render(){
+ const d=collect();
+ $("#shapeA").hidden=d.kind!=="A";$("#shapeB").hidden=d.kind!=="B";
+ $("#umeDims").hidden=d.kind!=="B";$("#boltOutWrap").hidden=d.kind==="B";$("#boltInWrap").hidden=d.kind==="A";
+ $("#ledLmWrap").hidden=!/^LED/.test(val("lamp"));
+ const em=isEmgKind(d.kind);
+ $("#emgSecs").hidden=!em;$("#baseSecs").hidden=em;$("#shapeWrap").hidden=em;$("#emgWrap").hidden=em;$("#dimWrap").hidden=em;
+ $("#iMountWrap").hidden=$("#iHeightWrap").hidden=d.kind!=="I";
+ $("#jClsWrap").hidden=$("#jFaceWrap").hidden=$("#jMountWrap").hidden=$("#jSignWrap").hidden=$("#jBlinkWrap").hidden=d.kind!=="J";
+ $("#kMountWrap").hidden=d.kind!=="K";
+ const r=em?evaluateEmg(d):evaluate(d);LAST={d,r};
+ let h="";
+ if(em)h+='<div class="summary"><div class="k"><span>器具種別 <b>'+({I:"I 非常灯",J:"J 誘導灯",K:"K 階段通路誘導灯"})[d.kind]+'</b></span>'+(d.year?'<span>製造年 <b>'+esc(d.year)+'</b></span>':'')+(d.qty?'<span>台数 <b>'+d.qty+'</b></span>':'')+'</div></div>';
+ else h+='<div class="summary"><div class="k">'+
+   '<span>器具種別 <b>'+(d.kind==="A"?"A 直付ベース":d.kind==="B"?"B 埋込ベース":"—")+'</b></span>'+
+   '<span>ランプ <b>'+esc($("#lamp").selectedOptions[0].text)+" ×"+d.lampN+'</b></span>'+
+   (r.lm?'<span>目標 <b>'+r.lm+'lm</b>('+esc(r.why)+')</span>':'')+
+   '<span>色 <b>'+d.col+" "+COLOR[d.col]+" "+CCT[d.col]+'</b></span>'+
+   (d.qty?'<span>台数 <b>'+d.qty+'</b></span>':'')+'</div></div>';
+ r.alerts.forEach(a=>{h+='<div class="alert '+a[0]+'"><strong>'+esc(a[1])+'</strong>'+esc(a[2])+'</div>';});
+ const cur=makerOf(d.maker);
+ if(r.groups.some(g=>g.cards.length))h+='<p class="legend"><span class="unc">赤文字</span>は確実ではない情報です。メーカーで確認してから使ってください。</p>';
+ r.groups.forEach(g=>{
+  if(!g.cards.length)return;
+  if(cur){g.cards=g.cards.slice().sort((a,b)=>(b.mk===cur)-(a.mk===cur));g.cards.forEach(c=>{if(c.mk===cur&&!c.chips.some(x=>x[1]==="既設と同じメーカー"))c.chips.unshift(["ok","既設と同じメーカー"]);});}
+  h+='<div class="group"><h3>'+esc(g.title)+'<small>'+esc(g.sub)+'</small></h3><div class="cards">';
+  g.cards.forEach((c,i)=>{
+   const id=g.title+"#"+i;
+   h+='<article class="card"><div class="mk"><b>'+esc(c.mk)+'</b><span>'+(c.emgLabel||fitLabel(c.fitLevel))+'</span></div>'+
+     '<div>'+esc(c.series)+'</div><div class="code'+(c.ver?'':' unc')+'">'+esc(c.code)+'</div><div class="parts">'+markParts(c)+'</div>'+
+     '<div class="chips">'+c.chips.map(x=>'<span class="chip '+x[0]+'">'+esc(x[1])+'</span>').join("")+'</div>'+
+     (c.notes.length?'<ul>'+c.notes.map(n=>'<li'+(UNC_RE.test(n)?' class="unc"':'')+'>'+esc(n)+'</li>').join("")+'</ul>':'')+
+     '<div class="acts"><a href="'+esc(c.link)+'" target="_blank" rel="noopener">'+esc(c.linkLabel)+' ↗</a>'+
+     '<button type="button" class="btn small ghost" data-copy="'+esc(c.code)+'">品番コピー</button>'+
+     '<button type="button" class="btn small" data-pick="'+esc(c.mk+"|"+c.code+"|"+c.series)+'">これに決定</button></div></article>';
+  });
+  h+='</div></div>';
+ });
+ if(r.groups.length){
+  h+='<div class="ai"><b>AIに相談</b><p class="hint">お使いのAI(ChatGPT・Gemini・Copilot・Claudeなど)に貼り付けて、写真と一緒に相談できます。建物名・お客様名は含めていません。</p>'+
+   '<textarea id="aiText" readonly>'+esc(aiText(d,r))+'</textarea><div><button type="button" class="btn" id="aiCopy">相談文をコピー</button></div></div>';
+ }else if(!r.alerts.length){h+='<div class="empty">左の項目を入力すると、ここに候補が表示されます。</div>';}
+ $("#results").innerHTML=h;
+}
+// 確実ではない情報の判定
+const PARTS_VER=new Set(["LEEM-40203N-01","LEEM-40253N-01","LEEM-40323N-01","LEEM-40403N-01","LEEM-40523N-01","LEEM-40693N-01","LEEM-40523W-01","LEEM-40523WW-01","LEEM-40403W-01","LEEM-40693W-01","LEEM-40253D-01","LEEM-40403L-01",
+ "NEL4500EN LE9","NEL4400EN LE9","LEEM-20083N-01","LEEM-20163N-01","LEEM-20323N-01","EL-LU21543N AHTN","NEL2100EN LE9","NEL2000EN LE9","EL-LU45053N AHTN","EL-LU47053N AHTN","EL-LU45053WW AHTN"]);
+const UNC_RE=/推定|目安|確認できていません|設定がない場合|図で確認|WIN2Kで確認|メーカーで確認/;
+function markParts(c){
+ return String(c.parts||"").split(" ｜ ").map(seg=>{
+  if(UNC_RE.test(seg))return '<span class="unc">'+esc(seg)+'</span>';
+  let h=esc(seg).replace(/(LEEM-[24]0\d{3}[A-Z]{1,2}-01|NEL[24]\d00E[A-Z] L[EA]9|EL-LU4\d053[A-Z]{1,2} AHTN|EL-LU2\d{2}43[A-Z]{1,2} AHTN)/g,t=>PARTS_VER.has(t)?t:'<span class="unc">'+t+'</span>');
+  if(!c.ver&&h.indexOf("unc")<0)h='<span class="unc">'+h+'</span>';
+  return h;}).join(" ｜ ");
+}
+const uncB=(code,ok)=>ok?"<b>"+esc(code)+"</b>":'<b class="unc">'+esc(code)+'</b>';
+function makerOf(s){
+ s=(s||"").toUpperCase();
+ if(/東芝|TOSHIBA/.test(s))return "東芝";
+ if(/パナソニック|PANASONIC|ナショナル|NATIONAL|松下/.test(s))return "パナソニック";
+ if(/三菱|MITSUBISHI/.test(s))return "三菱";
+ return "";
+}
+function fitLabel(l){return l==="ok"?'<span class="chip ok">取付 そのまま</span>':l==="warn"?'<span class="chip warn">取付 要確認・加工</span>':'<span class="chip ng">取付 条件に合わない</span>';}
+
+function aiText(d,r){
+ const L=[];
+ if(isEmgKind(d.kind)){
+  L.push("非常灯・誘導灯の交換について相談したいです。以下は現地調査の内容と、選定ツールが出した候補です。候補の妥当性、法令上の注意点、表示板・電池の手配で抜けがないか教えてください。品番は必ずメーカー公式情報で確認できるものだけを挙げてください。");
+  L.push("");L.push("【既設器具】");
+  L.push("器具種別:"+({I:"非常灯",J:"誘導灯",K:"階段通路誘導灯"})[d.kind]);
+  if(d.maker||d.model)L.push("メーカー・型式:"+[d.maker,d.model].filter(Boolean).join(" "));
+  if(d.year)L.push("製造年:"+d.year);
+  if(d.kind==="I")L.push("取付:"+({d:"直付",e:"埋込φ100",e150:"埋込φ150・その他"}[d.imount]||"不明")+" / 天井高:"+({low:"〜3m",mid:"〜6m",high:"〜8m"}[d.iheight]||"不明"));
+  if(d.kind==="J")L.push("級:"+(d.jcls||"不明")+" / "+({1:"片面",2:"両面"}[d.jface]||"")+" / 取付:"+({d:"天井・壁直付",e:"天井埋込",w:"壁埋込"}[d.jmount]||"不明")+" / 表示:"+({exit:"避難口",R:"通路右",L:"通路左",B:"通路両"}[d.jsign]||"不明")+(d.jblink?" / 点滅・音声付":""));
+  if(d.kind==="K")L.push("取付:"+({wall:"壁直付",ceil:"天井直付"}[d.kmount]||"不明"));
+  L.push("点灯時間:"+(d.etime==="long"?"長時間型(60分)":"一般型")+" / 環境:"+$("#env").selectedOptions[0].text);
+  if(d.memo)L.push("備考:"+d.memo);
+  L.push("");L.push("【ツールの候補】");
+  r.groups.forEach(g=>g.cards.forEach(c=>L.push("・"+c.mk+" "+c.code+"("+c.series+") "+c.parts)));
+  return L.join("\n");
+ }
+ L.push("照明器具のLED化で、交換器具の選定を相談したいです。以下は現地調査の内容と、選定ツールが出した候補です。候補の妥当性、施工上の注意点、ほかに検討すべき器具があれば教えてください。品番は必ずメーカー公式情報で確認できるものだけを挙げてください。");
+ L.push("");L.push("【既設器具】");
+ L.push("器具種別:"+(d.kind==="A"?"直付ベース":"埋込ベース")+" / 形状:"+({trough:"トラフ",fuji:"逆富士・富士型",kasa:"反射笠",katahan:"片反射笠",open:"埋込下面開放",louver:"埋込ルーバー・カバー付",cch:"Cチャンネル回避"})[d.shape]);
+ if(d.maker||d.model)L.push("メーカー・型式:"+[d.maker,d.model].filter(Boolean).join(" "));
+ if(d.year)L.push("製造年:"+d.year);
+ L.push("ランプ:"+$("#lamp").selectedOptions[0].text+"×"+d.lampN+" / 色温度:"+COLOR[d.col]);
+ const dim=[d.wFrame&&"枠"+d.wFrame,d.wBase&&"ベース"+d.wBase,d.holeW&&"埋込穴"+d.holeW+(d.holeL?"×"+d.holeL:""),d.futo&&"フトコロ"+d.futo].filter(Boolean);
+ if(dim.length)L.push("寸法(mm):"+dim.join("、"));
+ const mt=[d.boltOut!=null&&"吊ボルト出代"+d.boltOut+"mm",d.boltIn!=null&&"吊ボルト引込"+d.boltIn+"mm",d.pitch&&"ボルトピッチ"+d.pitch+"mm",d.entry&&"入線:"+d.entry,d.board&&"ボード厚:"+d.board,d.pipe&&"器具に配管が直接接続"].filter(Boolean);
+ if(mt.length)L.push("取付:"+mt.join("、"));
+ L.push("取付面:"+({ceil:"天井",wall:"壁",slope:"傾斜天井"})[d.face]+(d.dedic?"(銘板:"+$("#dedic").selectedOptions[0].text+")":""));
+ L.push("環境:"+$("#env").selectedOptions[0].text+(d.emg?"、非常用併用":"")+(d.dim?"、調光・センサーあり":""));
+ if(d.height)L.push("取付高さ:"+d.height+"m");
+ if(d.memo)L.push("備考:"+d.memo);
+ L.push("");L.push("【ツールの候補】目標 "+r.lm+"lm("+r.why+")");
+ r.groups.forEach(g=>g.cards.forEach(c=>L.push("・"+c.mk+" "+c.code+"("+c.series+")"+(c.ver?"":"※品番はルール推定")+" "+c.chips.map(x=>x[1]).join("/"))));
+ return L.join("\n");
+}
+
+/* ========== 型番から探す ========== */
+function lookup(){
+ const raw=val("model");const s=norm(raw);const msg=$("#lookMsg");
+ if(!s){msg.textContent="型番を入力してください。";return;}
+ if(lookupEmg(s,raw,msg)){
+  const bl=/^(FBK|FBL|LEDEM|ET-)/.test(s)?"https://saturn.tlt.co.jp/pdocs/s/"+s.replace(/[-\s]/g,""):searchLink(raw+" 交換電池");
+  const h=msg.innerHTML+' <a href="'+esc(bl)+'" target="_blank" rel="noopener">既設器具の交換電池を調べる ↗</a>';
+  hideExample();setMode("emg",true);msg.innerHTML=h;return;}
+ if(MODE==="emg"){msg.innerHTML="非常灯・誘導灯の型番として判定できませんでした。ベースライトの型番なら「ベースライト」のタブで調べてください。";return;}
+ let m;
+ const setShape=v=>{const e=document.querySelector('input[name="shape"][value="'+v+'"]');if(e)e.checked=true;};
+ const setKind=v=>{document.getElementById("k"+v).checked=true;};
+ const setCol=v=>{const e=document.getElementById("c"+v);if(e)e.checked=true;};
+ const setLm=lm=>{document.getElementById("lamp").value="LED";$("#ledLm").value=lm;document.getElementById("bSame").checked=true;};
+ const set20=lm=>{document.getElementById("lamp").value="LED20";$("#ledLm").value=lm;document.getElementById("bSame").checked=true;};
+ // 20形
+ if((m=s.match(/^(XLX|XFX)2([013])0([NADKPRUV])E([NDWVL])[A-Z]?L[EA]9/))){
+  const lm={0:800,1:1600,3:3200}[m[2]];
+  const shp={N:["A","trough"],A:["A","fuji"],D:["A","fuji"],K:["A","kasa"],P:["B","open"],R:["B","open"],U:["B","open"],V:["B","open"]}[m[3]];
+  setKind(shp[0]);setShape(shp[1]);setCol(m[4]);set20(lm);
+  if(m[3]==="A")$("#wBase").value=150;if(m[3]==="D")$("#wBase").value=230;
+  if(shp[0]==="B")$("#holeW").value={P:150,R:190,U:220,V:300}[m[3]];
+  const nw="XFX2"+m[2]+"0"+m[3]+"E"+m[4]+" LE9";
+  msg.innerHTML=m[1]==="XLX"?"パナソニックの20形の旧モデルです。現行の後継品番は "+uncB(nw,VERIFIED.has(nw))+"(XLX→XFX)。候補に反映しました。":"パナソニックの20形です。他社の同等品を候補に表示しました。";
+ }
+ else if((m=s.match(/^MY-?([VLHB])2(08|15|30)(\d)(\d)(\d)(S?)\/?([A-Z]{1,2}?)(AHTN|AHZ|AH)/))){
+  const lm={"08":800,"15":1600,"30":3200}[m[2]];const f=m[1];const tail=m[5];
+  const col={N:"N",D:"D",W:"W",WW:"V",L:"L"}[m[7]]||"N";
+  if(f==="B"){setKind("B");setShape("open");$("#holeW").value=tail==="5"?300:"";}
+  else{setKind("A");setShape(f==="L"?"trough":f==="H"?"kasa":"fuji");if(f==="V")$("#wBase").value=tail==="1"?230:150;}
+  setCol(col);set20(lm);
+  const nw="MY-"+f+"2"+m[2]+"4"+m[4]+m[5]+m[6]+"/"+m[7]+" "+m[8];
+  msg.innerHTML=(m[3]<"4"?"三菱の20形の旧世代です。後継は "+uncB(nw,VERIFIED.has(nw))+"(販売店で確認した規則 2xx→4xx)。":"三菱の20形です。")+'<span class="unc">20形にも新しい形名(5xx)が出ている可能性があります。WIN2Kで確認してください。</span>';
+ }
+ else if((m=s.match(/^LEK([TR])2(\d\d)(\d\d)([34])([A-Z]{1,2})-?LS9/))){
+  const lm={"08":800,"16":1600,"32":3200}[m[3]];
+  const col={N:"N",D:"D",W:"W",WW:"V",L:"L"}[m[5]]||"N";
+  if(m[1]==="T"){setKind("A");setShape({"07":"trough","12":"fuji","23":"fuji","15":"kasa"}[m[2]]||"fuji");if(m[2]==="12")$("#wBase").value=120;if(m[2]==="23")$("#wBase").value=230;}
+  else{setKind("B");setShape("open");}
+  setCol(col);if(lm)set20(lm);
+  msg.innerHTML="東芝TENQOOの20形です。"+(m[4]==="3"?"末尾3の形名は生産完了です。現行品は末尾4(例:LEKT212164N-LS9)です。":"")+'<a href="https://saturn.tlt.co.jp/pdocs/replace.html?katamei='+esc(s.replace(/-/g,""))+'" target="_blank" rel="noopener">東芝の代替商品検索</a>';
+ }
+ // パナソニック 旧iD(XLX) → 新(XFX)
+ else if((m=s.match(/^(XLX|XFX)4([1-6])([09])([NADKRUVT])E([NDWVL])[TZP]?L[EA]9/))){
+  const lm={1:2000,2:2500,3:3200,4:4000,5:5200,6:6900}[m[2]];
+  const shp={N:["A","trough"],A:["A","fuji"],D:["A","fuji"],K:["A","kasa"],R:["B","open"],U:["B","open"],V:["B","open"],T:["B","cch"]}[m[4]];
+  setKind(shp[0]);setShape(shp[1]);setCol(m[5]);setLm(lm);
+  if(m[4]==="A")$("#wBase").value=150;if(m[4]==="D")$("#wBase").value=230;
+  if(shp[0]==="B")$("#holeW").value={R:190,U:220,V:300,T:220}[m[4]];
+  const nw="XFX4"+m[2]+m[3]+m[4]+"E"+m[5]+" LE9";
+  msg.innerHTML=m[1]==="XLX"?"パナソニックの旧モデルです。現行の後継品番は "+uncB(nw,VERIFIED.has(nw))+"(XLX→XFX、末尾T/Z/P除去。販売店で後継表示を確認した規則)。候補に反映しました。":"パナソニック現行品です。他社の同等品を候補に表示しました。";
+ }
+ // 三菱 Myシリーズ 旧世代(3xx/4xx) → 5xx
+ else if((m=s.match(/^MY-?([VLHB])4(\d\d)([345])(\d)(\d)(S?)\/?([A-Z]{1,2}?)(AHTN|AHZ|AH)/))){
+  const lm={20:2000,25:2500,30:3200,40:4000,50:5200,70:6900}[m[2]];
+  const f=m[1];const tail=m[5];
+  const col={N:"N",D:"D",W:"W",WW:"V",L:"L"}[m[7]]||"N";
+  if(f==="B"){setKind("B");setShape(tail==="4"?"cch":"open");$("#holeW").value={0:100,2:190,3:220,4:220,5:300}[tail]||"";}
+  else{setKind("A");setShape(f==="L"?"trough":f==="H"?"kasa":"fuji");if(f==="V")$("#wBase").value=tail==="1"?230:150;}
+  setCol(col);if(lm)setLm(lm);
+  const nw="MY-"+f+"4"+m[2]+"5"+m[4]+m[5]+m[6]+"/"+m[7]+" "+m[8];
+  msg.innerHTML=m[3]!=="5"?"三菱の旧世代です。現行世代は "+uncB(nw,VERIFIED.has(nw))+" の形(3xx・4xx→5xx。WIN2Kの「現行品」表示で確認した規則)。候補に反映しました。":"三菱の現行世代です。他社の同等品を候補に表示しました。";
+ }
+ // 東芝 TENQOO
+ else if((m=s.match(/^LEK([TR])4(\d\d)(\d{3})([A-Z]{1,2})-?LS9/))){
+  const lm={203:2000,253:2500,323:3200,403:4000,523:5200,693:6900}[m[3]];
+  const col={N:"N",D:"D",W:"W",WW:"V",L:"L"}[m[4]]||"N";
+  if(m[1]==="T"){setKind("A");setShape({"07":"trough","12":"fuji","23":"fuji","15":"kasa"}[m[2]]||"fuji");if(m[2]==="12")$("#wBase").value=120;if(m[2]==="23")$("#wBase").value=230;}
+  else{setKind("B");setShape("open");$("#holeW").value={"19":190,"22":220,"30":300}[m[2]]||"";}
+  setCol(col);if(lm)setLm(lm);
+  msg.innerHTML="東芝TENQOOの形名です。生産状況は<a href=\"https://saturn.tlt.co.jp/pdocs/s/"+esc(s.replace(/-/g,""))+"\" target=\"_blank\" rel=\"noopener\">東芝 商品データベース</a>で確認できます。他社の同等品を候補に表示しました。";
+ }
+ // 蛍光灯の表記が含まれる場合
+ else if(/FHF16|FL20|FLR20/.test(s)){
+  document.getElementById("lamp").value=/FHF16/.test(s)?"FHF16H":"FL20";
+  const n=s.match(/[×X](\d)/);if(n)document.getElementById("lampN").value=n[1];
+  msg.textContent="20形のランプを反映しました。形状と寸法を入力してください。";
+ }
+ else if(/FHF32|FLR40|FL40|HF32/.test(s)){
+  if(/FHF32|HF32/.test(s))document.getElementById("lamp").value="FHF32U";else document.getElementById("lamp").value="FLR40";
+  const n=s.match(/[×X](\d)/);if(n)document.getElementById("lampN").value=n[1];
+  msg.textContent="ランプの種類を反映しました。形状と寸法を入力してください。";
+ }
+ else{
+  msg.innerHTML="この型番は自動判定できませんでした。蛍光灯器具の場合は、形状・ランプ・寸法の欄から候補を出します。メーカーの後継品検索も使えます:"+
+   '<a href="'+searchLink(raw+" 後継")+'" target="_blank" rel="noopener">後継品を検索 ↗</a>';
+ }
+ $("#maker").value=$("#maker").value||(/^X[LF]X|^NNL|^NNF/.test(s)?"パナソニック":/^MY|^EL-L/.test(s)?"三菱":/^LEK|^LEE/.test(s)?"東芝":"");
+ hideExample();render();
+}
+
+/* ========== 記録 ========== */
+const KEY="kigu-sentei-records-v1";
+function loadRec(){try{return JSON.parse(localStorage.getItem(KEY)||"[]");}catch(e){return [];}}
+function saveRec(a){try{localStorage.setItem(KEY,JSON.stringify(a));return true;}catch(e){return false;}}
+function pick(str){
+ const [mk,code,series]=str.split("|");const d=LAST.d;
+ const rec={date:new Date().toLocaleDateString("ja-JP"),no:d.no,floor:d.floor,place:d.place,qty:d.qty||"",
+  before:isEmgKind(d.kind)?[d.maker,d.model,({I:"非常灯",J:"誘導灯",K:"階段通路誘導灯"})[d.kind],d.jcls,d.year&&"製造"+d.year].filter(Boolean).join(" "):[d.maker,d.model,({trough:"トラフ",fuji:"逆富士",kasa:"反射笠",katahan:"片反射",open:"下面開放",louver:"ルーバー",cch:"Cチャンネル回避"})[d.shape],$("#lamp").selectedOptions[0].text+"×"+d.lampN].filter(Boolean).join(" "),
+  dims:[d.wBase&&"ベース"+d.wBase,d.holeW&&"穴"+d.holeW+(d.holeL?"×"+d.holeL:""),d.boltOut!=null&&"出代"+d.boltOut,d.boltIn!=null&&"引込"+d.boltIn].filter(Boolean).join(" "),
+  pipe:d.pipe?"あり":"",maker:mk,code,series};
+ const a=loadRec();a.push(rec);
+ if(saveRec(a))toast("記録しました");else toast("このブラウザでは記録を保存できません");
+ renderRec();
+}
+const COLS=[["date","日付"],["no","No."],["floor","フロア"],["place","場所"],["qty","台数"],["before","既設"],["dims","寸法・取付"],["pipe","配管"],["maker","メーカー"],["code","決定品番"],["series","シリーズ"]];
+function renderRec(){
+ const a=loadRec();$("#recCount").textContent=a.length;
+ $("#recTable").innerHTML=a.length?'<table class="rec"><thead><tr>'+COLS.map(c=>"<th>"+c[1]+"</th>").join("")+'</tr></thead><tbody>'+
+  a.map(r=>"<tr>"+COLS.map(c=>"<td>"+esc(r[c[0]])+"</td>").join("")+"</tr>").join("")+'</tbody></table>':'<div class="empty">まだ記録がありません。候補の「これに決定」を押すとここに残ります。</div>';
+}
+function csv(){const a=loadRec();return [COLS.map(c=>c[1]).join(",")].concat(a.map(r=>COLS.map(c=>'"'+String(r[c[0]]??"").replace(/"/g,'""')+'"').join(","))).join("\n");}
+
+function copyText(t,okMsg,fallbackEl){
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>toast(okMsg),()=>fallback());}else fallback();
+ function fallback(){if(fallbackEl){fallbackEl.focus();fallbackEl.select();toast("選択しました。長押しでコピーしてください");}else toast(t);}
+}
+
+/* ========== 例と初期化 ========== */
+const EXAMPLE={no:"1",floor:"2F",place:"事務所",qty:"12",maker:"東芝",year:"2007",height:"2.6",lamp:"FLR40",lampN:"2",wBase:"230",wFrame:"",boltOut:"35",pitch:"",entry:"中央",board:"9.5",kind:"A",shape:"fuji",cct:"N",bright:"0",face:"ceil"};
+function fill(o){
+ ["no","floor","place","qty","maker","year","height","lamp","lampN","wBase","wFrame","boltOut","pitch","entry","board"].forEach(k=>{const e=document.getElementById(k);if(e)e.value=o[k]||"";});
+ ["holeW","holeL","futo","boltIn","ledLm","model","memo"].forEach(k=>{document.getElementById(k).value="";});
+ const set=(n,v)=>{const e=document.querySelector('input[name="'+n+'"][value="'+v+'"]');if(e)e.checked=true;};
+ set("kind",o.kind);set("shape",o.shape);set("cct",o.cct);set("bright",o.bright);set("face",o.face);
+ $("#pipe").checked=false;$("#emg").checked=false;$("#dim").checked=false;$("#dedic").value="";$("#env").value="in";
+}
+function hideExample(){$("#exBar").hidden=true;}
+fill(EXAMPLE);
+
+$("#f").addEventListener("input",e=>{if(e.target.id!=="model")hideExample();render();});
+$("#f").addEventListener("change",e=>{if(e.target.name==="kind"){document.querySelectorAll('input[name="shape"]').forEach(x=>x.checked=false);}render();});
+$("#f").addEventListener("submit",e=>e.preventDefault());
+$("#model").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();lookup();}});
+$("#lookBtn").addEventListener("click",lookup);
+$("#clearBtn").addEventListener("click",()=>{fill({lamp:"FLR40",lampN:"2",cct:"N",bright:"0",face:"ceil"});document.querySelectorAll('input[name="kind"],input[name="shape"]').forEach(x=>x.checked=false);hideExample();render();});
+$("#results").addEventListener("click",e=>{
+ const c=e.target.closest("[data-copy]");if(c)copyText(c.dataset.copy,"品番をコピーしました");
+ const p=e.target.closest("[data-pick]");if(p)pick(p.dataset.pick);
+ if(e.target.id==="aiCopy")copyText($("#aiText").value,"相談文をコピーしました",$("#aiText"));
+});
+let MODE="base";
+const MODE_KINDS={base:["A","B","D"],emg:["I","J","K"]};
+function setMode(m,keepKind){
+ MODE=m;
+ ["A","B","D","I","J","K"].forEach(k=>{const show=MODE_KINDS[m].includes(k);const i=document.getElementById("k"+k);i.hidden=!show;document.querySelector('label[for="k'+k+'"]').hidden=!show;});
+ const cur=radio("kind");
+ if(!keepKind&&cur&&!MODE_KINDS[m].includes(cur)){document.getElementById("k"+cur).checked=false;document.querySelectorAll('input[name="shape"]').forEach(x=>x.checked=false);}
+ if(m==="emg"&&!radio("kind"))document.getElementById("kJ").checked=true;
+ $("#model").placeholder=m==="emg"?"例:FBK-10601N-LS17 / NNFB91605J / KSH1951B1EL":"例:XLX450DENT LE9 / MY-V450331/N AHTN";
+ $("#lookMsg").textContent=m==="emg"?"非常灯・誘導灯・表示板の型番から、後継品と交換電池を調べます。":"LED器具の旧型番は後継品番に変換します。蛍光灯器具の型番は下の項目から候補を出します。";
+ if(m==="emg")hideExample();
+ showTab(false);render();
+}
+function showTab(rec){$("#view-sel").hidden=rec;$("#view-rec").hidden=!rec;
+ $("#tab-base").setAttribute("aria-selected",!rec&&MODE==="base");$("#tab-emg").setAttribute("aria-selected",!rec&&MODE==="emg");$("#tab-rec").setAttribute("aria-selected",rec);}
+$("#tab-base").addEventListener("click",()=>setMode("base"));
+$("#tab-emg").addEventListener("click",()=>setMode("emg"));
+$("#tab-rec").addEventListener("click",()=>{renderRec();showTab(true);});
+$("#csvBtn").addEventListener("click",()=>copyText(csv(),"CSVをコピーしました"));
+$("#recClear").addEventListener("click",()=>{$("#recConfirm").hidden=false;});
+$("#recClearNo").addEventListener("click",()=>{$("#recConfirm").hidden=true;});
+$("#recClearYes").addEventListener("click",()=>{saveRec([]);$("#recConfirm").hidden=true;renderRec();toast("記録を消しました");});
+renderRec();setMode("base",true);
+})();
+</script>
+
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{});});}
+</script>
+</body>
+</html>
