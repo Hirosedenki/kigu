@@ -1,5 +1,5 @@
 // 器具選定ナビ:電波の弱い現場でも開けるように、前回開いた画面を保存しておく
-const CACHE="kigu-v1";
+const CACHE="kigu-v2";
 const FILES=["./","./index.html","./manifest.json","./icon-192.png","./icon-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting();});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});
